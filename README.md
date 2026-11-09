@@ -1,6 +1,6 @@
-# SIFOIN — Sistema de Formación Institucional
+# SIBER — Sistema Bibliotecario de Reservas
 
-Sistema de gestión de formaciones de la Biblioteca — Institución Universitaria Colegio Mayor de Antioquia.
+Sistema Bibliotecario de Reservas — Institución Universitaria Colegio Mayor de Antioquia.
 
 ## Stack
 
