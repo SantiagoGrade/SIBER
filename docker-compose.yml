@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sifoin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sifoin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sifoin_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-sifoin}
+    ports:
+      - "5433:5432"
+    volumes:
+      - sifoin-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db-test:
+    image: postgres:16-alpine
+    container_name: sifoin-db-test
+    environment:
+      POSTGRES_USER: sifoin
+      POSTGRES_PASSWORD: sifoin_test_password
+      POSTGRES_DB: sifoin_test
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sifoin -d sifoin_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: sifoin-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: ./backend/.env
+    ports:
+      - "3005:3005"
+
+  frontend:
+    build: ./frontend
+    container_name: sifoin-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3001:80"
+
+volumes:
+  sifoin-pgdata:

@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum RolCuenta {
+  SUPER_ADMIN
+  ADMIN
+  FORMADOR
+}
+
+enum EstadoReserva {
+  CONFIRMADA
+  FINALIZADA
+  CANCELADA
+}
+
+enum EstadoReasignacion {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  SIN_REEMPLAZO
+  PENDIENTE_RESPUESTA_DOCENTE
+  RESUELTA
+}
+
+enum EstadoPropuesta {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+enum EstadoQr {
+  PROGRAMADO
+  ABIERTO
+  CERRADO
+  INVALIDADO
+}
+
+enum EstadoEnvio {
+  PENDIENTE
+  ENVIADO
+  OMITIDO
+  INCIDENCIA
+}
+
+enum EstadoNotificacion {
+  PENDIENTE
+  ENVIADA
+  FALLIDA
+}
+
+enum TipoExcepcion {
+  VACACIONES
+  INCAPACIDAD
+  CALAMIDAD
+  PERMISO
+  BLOQUEO_ADMINISTRATIVO
+  FECHA_ESPECIAL
+}
+
+enum TipoToken {
+  CANCELACION_RESERVA
+  PROPUESTA_FECHA
+  RECUPERACION_PASSWORD
+}
+
+// ──────────────────────────── Cuentas ────────────────────────────
+
+model Cuenta {
+  id              String    @id @default(cuid())
+  usuario         String    @unique
+  correo          String    @unique
+  passwordHash    String
+  rol             RolCuenta
+  nombreCompleto  String
+  activo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  formador        Formador?
+  tokens          TokenSeguro[]
+
+  @@index([rol, activo])
+}
+
+model Formador {
+  id            String   @id @default(cuid())
+  cuentaId      String   @unique
+  cuenta        Cuenta   @relation(fields: [cuentaId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cursos        FormadorCurso[]
+  disponibilidad DisponibilidadSemanal[]
+  excepciones   ExcepcionDisponibilidad[]
+  reservas      Reserva[]
+  solicitudesReasignacion SolicitudReasignacion[] @relation("Solicitante")
+  reasignacionesSugeridas SolicitudReasignacion[] @relation("ReemplazoSugerido")
+}
+
+// ──────────────────────────── Cursos ─────────────────────────────
+
+model Curso {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  formadores  FormadorCurso[]
+  reservas    Reserva[]
+}
+
+model FormadorCurso {
+  formadorId String
+  cursoId    String
+  formador   Formador @relation(fields: [formadorId], references: [id], onDelete: Cascade)
+  curso      Curso    @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@id([formadorId, cursoId])
+}
+
+// ───────────────────────── Disponibilidad ────────────────────────
+
+// diaSemana: 1 = lunes … 7 = domingo (Luxon/ISO weekday)
+// horaInicio/horaFin: minutos desde las 00:00 (hora local America/Bogota)
+model DisponibilidadSemanal {
+  id         String   @id @default(cuid())
+  formadorId String
+  formador   Formador @relation(fields: [formadorId], references: [id], onDelete: Cascade)
+  diaSemana  Int
+  horaInicio Int
+  horaFin    Int
+
+  @@index([formadorId, diaSemana])
+}
+
+model ExcepcionDisponibilidad {
+  id         String        @id @default(cuid())
+  formadorId String
+  formador   Formador      @relation(fields: [formadorId], references: [id], onDelete: Cascade)
+  tipo       TipoExcepcion
+  iniciaAt   DateTime
+  terminaAt  DateTime
+  motivo     String?
+  createdAt  DateTime      @default(now())
+
+  @@index([formadorId, iniciaAt, terminaAt])
+}
+
+// ─────────────────────────── Catálogos ───────────────────────────
+
+model Facultad {
+  id      String   @id @default(cuid())
+  nombre  String   @unique
+  activo  Boolean  @default(true)
+  reservas Reserva[]
+}
+
+model ProgramaAcademico {
+  id          String       @id @default(cuid())
+  nombre      String       @unique
+  activo      Boolean      @default(true)
+  asistencias Asistencia[]
+}
+
+// ─────────────────────────── Reservas ────────────────────────────
+
+model Reserva {
+  id                  String        @id @default(cuid())
+  codigo              String        @unique
+  cursoId             String
+  curso               Curso         @relation(fields: [cursoId], references: [id])
+  formadorId          String
+  formador            Formador      @relation(fields: [formadorId], references: [id])
+  docenteNombre       String
+  docenteCorreo       String
+  docenteTelefono     String?
+  aula                String?
+  facultadId          String?
+  facultad            Facultad?     @relation(fields: [facultadId], references: [id])
+  iniciaAt            DateTime
+  terminaAt           DateTime
+  estado              EstadoReserva @default(CONFIRMADA)
+  incidenciaPendiente Boolean       @default(false)
+  idempotencyKey      String?       @unique
+  motivoCancelacion   String?
+  canceladaAt         DateTime?
+  finalizadaAt        DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  historial           HistorialReserva[]
+  solicitudesReasignacion SolicitudReasignacion[]
+  tokens              TokenSeguro[]
+  asistencias         Asistencia[]
+  evaluaciones        EvaluacionFormacion[]
+  qr                  RegistroQrFormacion?
+
+  @@index([formadorId, estado, iniciaAt])
+  @@index([estado, iniciaAt])
+  @@index([cursoId, estado])
+  @@index([docenteCorreo])
+}
+
+model HistorialReserva {
+  id           String   @id @default(cuid())
+  reservaId    String
+  reserva      Reserva  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  evento       String
+  detalle      Json?
+  actorCuentaId String?
+  createdAt    DateTime @default(now())
+
+  @@index([reservaId, createdAt])
+}
+
+// ───────────────────────── Reasignaciones ────────────────────────
+
+model SolicitudReasignacion {
+  id                    String              @id @default(cuid())
+  reservaId             String
+  reserva               Reserva             @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  formadorSolicitanteId String
+  solicitante           Formador            @relation("Solicitante", fields: [formadorSolicitanteId], references: [id])
+  motivo                String
+  observacion           String?
+  estado                EstadoReasignacion  @default(PENDIENTE)
+  reemplazoSugeridoId   String?
+  reemplazoSugerido     Formador?           @relation("ReemplazoSugerido", fields: [reemplazoSugeridoId], references: [id])
+  gestionadaPorId       String?
+  createdAt             DateTime            @default(now())
+  resueltaAt            DateTime?
+
+  propuestas            PropuestaFecha[]
+
+  @@index([reservaId, estado])
+  @@index([estado])
+}
+
+model PropuestaFecha {
+  id           String          @id @default(cuid())
+  solicitudId  String
+  solicitud    SolicitudReasignacion @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  iniciaAt     DateTime
+  terminaAt    DateTime
+  estado       EstadoPropuesta @default(PENDIENTE)
+  createdAt    DateTime        @default(now())
+  respondidaAt DateTime?
+  tokens       TokenSeguro[]
+
+  @@index([solicitudId, estado])
+}
+
+// ─────────────────────────── Tokens ──────────────────────────────
+
+model TokenSeguro {
+  id         String    @id @default(cuid())
+  tipo       TipoToken
+  hash       String    @unique
+  reservaId  String?
+  reserva    Reserva?  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  propuestaId String?
+  propuesta  PropuestaFecha? @relation(fields: [propuestaId], references: [id], onDelete: Cascade)
+  cuentaId   String?
+  cuenta     Cuenta?   @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  expiraAt   DateTime
+  usadoAt    DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([tipo, expiraAt])
+}
+
+// ─────────────────── Asistencia y evaluación ─────────────────────
+
+model Asistencia {
+  id                  String   @id @default(cuid())
+  reservaId           String
+  reserva             Reserva  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  nombreCompleto      String
+  documento           String
+  correo              String
+  programaAcademicoId String
+  programa            ProgramaAcademico @relation(fields: [programaAcademicoId], references: [id])
+  aceptaTratamiento   Boolean  @default(false)
+  fechaRegistro       DateTime @default(now())
+
+  evaluacion          EvaluacionFormacion?
+
+  @@unique([reservaId, documento])
+  @@index([reservaId])
+  @@index([fechaRegistro])
+}
+
+model EvaluacionFormacion {
+  id                  String   @id @default(cuid())
+  reservaId           String
+  reserva             Reserva  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  asistenciaId        String   @unique
+  asistencia          Asistencia @relation(fields: [asistenciaId], references: [id], onDelete: Cascade)
+  calificacionGeneral Int
+  observaciones       String?
+  fechaRegistro       DateTime @default(now())
+
+  @@index([reservaId])
+  @@index([fechaRegistro])
+}
+
+// ─────────────────────────── QR formación ────────────────────────
+
+model RegistroQrFormacion {
+  id                   String     @id @default(cuid())
+  reservaId            String     @unique
+  reserva              Reserva    @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  tokenHash            String     @unique
+  tokenCifrado         String
+  fechaHabilitacion    DateTime
+  fechaCierre          DateTime
+  estado               EstadoQr   @default(PROGRAMADO)
+  estadoEnvio          EstadoEnvio @default(PENDIENTE)
+  fechaEnvioProgramado DateTime
+  fechaEnvioReal       DateTime?
+  destinatario         String?
+  intentosEnvio        Int        @default(0)
+  ultimoError          String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@index([estadoEnvio, fechaEnvioProgramado])
+  @@index([estado])
+}
+
+model RegistroIntentoQr {
+  id        String   @id @default(cuid())
+  reservaId String?
+  motivo    String
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([reservaId, createdAt])
+}
+
+// ─────────────────────────── Outbox ──────────────────────────────
+
+model Notificacion {
+  id             String            @id @default(cuid())
+  tipo           String
+  destinatario   String
+  asunto         String
+  payload        Json
+  dedupKey       String?           @unique
+  estado         EstadoNotificacion @default(PENDIENTE)
+  intentos       Int               @default(0)
+  ultimoError    String?
+  programadaPara DateTime
+  enviadaAt      DateTime?
+  createdAt      DateTime          @default(now())
+
+  @@index([estado, programadaPara])
+}
+
+model ConfiguracionSistema {
+  clave     String   @id
+  valor     Json
+  updatedAt DateTime @updatedAt
+}
