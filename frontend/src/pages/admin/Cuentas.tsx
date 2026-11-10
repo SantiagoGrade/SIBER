@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, mensajeError } from "../../api/client";
 import { AdminLayout } from "../../components/Layout";
-import { Spinner, ErrorMsg, OkMsg, fmtFecha } from "../../components/ui";
+import { Spinner, ErrorMsg, OkMsg, Select, fmtFecha } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 
 interface CuentaRow {
@@ -211,9 +211,8 @@ export default function Cuentas() {
             <input className="input-base" placeholder="Nombre completo" value={nueva.nombreCompleto} onChange={e => setNueva({ ...nueva, nombreCompleto: e.target.value })} />
             <input className="input-base" type="email" placeholder="Correo" value={nueva.correo} onChange={e => setNueva({ ...nueva, correo: e.target.value })} />
             <input className="input-base" type="password" placeholder="Contraseña (mín. 10)" value={nueva.password} onChange={e => setNueva({ ...nueva, password: e.target.value })} />
-            <select className="input-base" value={nueva.rol} onChange={e => { setNueva({ ...nueva, rol: e.target.value }); setCursoIds([]); }}>
-              {rolesCrear.map(r => <option key={r}>{r}</option>)}
-            </select>
+            <Select value={nueva.rol} onChange={v => { setNueva({ ...nueva, rol: v }); setCursoIds([]); }}
+              opciones={rolesCrear.map(r => ({ value: r, label: r }))} />
             <button className="btn-primary" disabled={enviando} onClick={crear}>
               {enviando ? "Creando…" : "Crear"}
             </button>
@@ -344,9 +343,8 @@ export default function Cuentas() {
             ))}
             {!franjas.length && <p className="text-sm text-gray-500">Sin franjas configuradas.</p>}
             <div className="mt-3 flex flex-wrap items-end gap-2">
-              <select className="input-base w-32" value={nuevaFranja.diaSemana} onChange={e => setNuevaFranja({ ...nuevaFranja, diaSemana: Number(e.target.value) })}>
-                {DIAS.slice(1).map((d, i) => <option key={d} value={i + 1}>{d}</option>)}
-              </select>
+              <Select className="w-36" value={String(nuevaFranja.diaSemana)} onChange={v => setNuevaFranja({ ...nuevaFranja, diaSemana: Number(v) })}
+                opciones={DIAS.slice(1).map((d, i) => ({ value: String(i + 1), label: d }))} />
               <input type="time" className="input-base w-28" value={nuevaFranja.inicio} onChange={e => setNuevaFranja({ ...nuevaFranja, inicio: e.target.value })} />
               <input type="time" className="input-base w-28" value={nuevaFranja.fin} onChange={e => setNuevaFranja({ ...nuevaFranja, fin: e.target.value })} />
               <button className="btn-secondary" onClick={() => setFranjas([...franjas, { diaSemana: nuevaFranja.diaSemana, horaInicio: aMin(nuevaFranja.inicio), horaFin: aMin(nuevaFranja.fin) }])}>Añadir</button>
@@ -366,9 +364,8 @@ export default function Cuentas() {
             ))}
             {!excepciones.length && <p className="text-sm text-gray-500">Sin excepciones.</p>}
             <div className="mt-3 flex flex-wrap items-end gap-2">
-              <select className="input-base w-full" value={exc.tipo} onChange={e => setExc({ ...exc, tipo: e.target.value })}>
-                {TIPOS_EXC.map(t => <option key={t}>{t}</option>)}
-              </select>
+              <Select value={exc.tipo} onChange={v => setExc({ ...exc, tipo: v })}
+                opciones={TIPOS_EXC.map(t => ({ value: t, label: t }))} />
               <input type="datetime-local" className="input-base flex-1" value={exc.iniciaAt} onChange={e => setExc({ ...exc, iniciaAt: e.target.value })} />
               <input type="datetime-local" className="input-base flex-1" value={exc.terminaAt} onChange={e => setExc({ ...exc, terminaAt: e.target.value })} />
               <input className="input-base flex-1" placeholder="Motivo" value={exc.motivo} onChange={e => setExc({ ...exc, motivo: e.target.value })} />
@@ -396,9 +393,8 @@ export default function Cuentas() {
               </div>
               <div>
                 <label className="label-base">Rol</label>
-                <select className="input-base" value={editCuenta.rol} onChange={e => setEditCuenta({ ...editCuenta, rol: e.target.value })}>
-                  {rolesCrear.map(r => <option key={r}>{r}</option>)}
-                </select>
+                <Select value={editCuenta.rol} onChange={v => setEditCuenta({ ...editCuenta, rol: v })}
+                  opciones={rolesCrear.map(r => ({ value: r, label: r }))} />
               </div>
               <div className="sm:col-span-2">
                 <label className="label-base">Nueva contraseña (opcional — mín. 10)</label>

@@ -44,7 +44,6 @@ export default function Configuracion() {
           <div key={c.clave} className="flex items-center gap-3">
             <div className="flex-1">
               <div className="text-sm font-medium">{c.descripcion}</div>
-              <div className="text-xs text-gray-400 font-mono">{c.clave}</div>
             </div>
             {c.tipo === "text"
               ? <textarea className="input-base flex-1" rows={2} value={valores[c.clave] ?? ""} onChange={e => setValores({ ...valores, [c.clave]: e.target.value })} />

@@ -10,7 +10,7 @@ backend/    Express + TS + Prisma + PostgreSQL
   src/controllers/         Capa HTTP delgada (sin reglas de negocio)
   src/services/            Reglas de negocio transaccionales
   src/utils/disponibilidad.ts  Matemática pura de franjas (testeable)
-  src/jobs/index.ts        Jobs: outbox, QR (+30min), finalización
+  src/jobs/index.ts        Jobs: outbox, QR (+30min), ciclo de vida reserva (EN_CURSO/FINALIZADA), recordatorios (día anterior 12:00, agrupados por docente/formador)
   prisma/migrations/       Migraciones versionadas (nunca db push en prod)
   test/unit|integration/   Vitest; integración contra PG real :5434
 frontend/   React 19 + TS + Vite + Tailwind 4 + react-big-calendar + recharts
@@ -21,7 +21,7 @@ docker-compose.yml        db:5433, db-test:5434, backend:3005, frontend:3001
 ## Comandos
 
 - Backend dev: `cd backend && npm run dev` · build: `npm run build` · tests: `npm test` (requiere db-test arriba) · typecheck: `npm run typecheck`
-- Migraciones: `npx prisma migrate dev` (dev) / `migrate deploy` (prod/CI). La constraint anti-solape vive en `migrations/20261108183000_exclusion_solape`.
+- Migraciones: `npx prisma migrate dev` (dev) / `migrate deploy` (prod/CI). La constraint anti-solape vive en `migrations/20261108183000_exclusion_solape`. Tras `migrate`/`generate`, **reiniciar `npm run dev`**: `tsx watch` no recarga `node_modules` y el cliente Prisma queda obsoleto en memoria (500 con "column ... does not exist").
 - Frontend dev: `cd frontend && npm run dev` · build: `npm run build`
 - Seed: `SEED_ADMIN_EMAIL=... SEED_ADMIN_PASSWORD=... npm run seed`
 

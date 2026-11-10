@@ -13,7 +13,9 @@ export type TipoNotificacion =
   | "RECHAZO_PROPUESTA"
   | "CONFIRMACION_FECHA_MODIFICADA"
   | "RECUPERACION_PASSWORD"
-  | "QR_ASISTENCIA";
+  | "QR_ASISTENCIA"
+  | "RECORDATORIO_DOCENTE"
+  | "RECORDATORIO_FORMADOR";
 
 export interface DatosCorreo {
   nombreDestinatario?: string;
@@ -23,12 +25,15 @@ export interface DatosCorreo {
   horaFin?: string;
   formador?: string;
   aula?: string;
+  docenteNombre?: string;
+  docenteCorreo?: string;
   docenteTelefono?: string;
   codigoReserva?: string;
   enlaceAccion?: string;
   motivo?: string;
   observacion?: string;
   qrPngBase64?: string;
+  items?: DatosCorreo[];
   extra?: Record<string, string>;
 }
 
@@ -44,9 +49,16 @@ function datosReserva(d: DatosCorreo): string {
     fila("Hora de finalización", d.horaFin),
     fila("Formador", d.formador),
     fila("Aula / lugar", d.aula),
+    fila("Docente solicitante", d.docenteNombre),
+    fila("Correo del docente", d.docenteCorreo),
     fila("Teléfono del docente", d.docenteTelefono),
     fila("Código de reserva", d.codigoReserva),
   ].join("");
+}
+
+/** Bloque independiente por reserva para correos que agrupan varias. */
+function bloqueReserva(d: DatosCorreo): string {
+  return `<div style="border:1px solid #dde3e0;border-left:4px solid #0A6A50;border-radius:8px;padding:10px 16px;margin:14px 0">${datosReserva(d)}</div>`;
 }
 
 export function construirCorreo(tipo: TipoNotificacion, d: DatosCorreo): {
@@ -142,6 +154,26 @@ export function construirCorreo(tipo: TipoNotificacion, d: DatosCorreo): {
         adjuntosMeta = [{ filename: "qr-asistencia.png", contentBase64: d.qrPngBase64, cid: "qr-asistencia" }];
       }
       break;
+    case "RECORDATORIO_DOCENTE": {
+      const items = d.items ?? [];
+      asunto = `SIFOIN — Recordatorio: tu formación de mañana`;
+      titulo = "Recordatorio de formación";
+      cuerpo = saludo
+        + `<p>Te recordamos que mañana, <strong>${d.fecha ?? ""}</strong>, tienes programada${items.length > 1 ? "s" : ""} la${items.length > 1 ? "s" : ""} siguiente${items.length > 1 ? "s" : ""} formación${items.length > 1 ? "es" : ""}:</p>`
+        + items.map(bloqueReserva).join("")
+        + `<p>Si no puedes asistir, cancela la reserva desde el enlace de tu correo de confirmación.</p>`;
+      break;
+    }
+    case "RECORDATORIO_FORMADOR": {
+      const items = d.items ?? [];
+      asunto = `SIFOIN — Recordatorio: formaciones de mañana`;
+      titulo = "Recordatorio de formaciones";
+      cuerpo = saludo
+        + `<p>Te recordamos que mañana, <strong>${d.fecha ?? ""}</strong>, impartirás la${items.length > 1 ? "s" : ""} siguiente${items.length > 1 ? "s" : ""} formación${items.length > 1 ? "es" : ""}:</p>`
+        + items.map(bloqueReserva).join("")
+        + `<p>El código QR de asistencia llegará a tu correo durante la formación, como siempre.</p>`;
+      break;
+    }
   }
   return { asunto, html: plantillaBase(titulo, cuerpo), adjuntosMeta };
 }

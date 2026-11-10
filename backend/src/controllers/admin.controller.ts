@@ -6,7 +6,7 @@ import {
   crearCurso, actualizarCurso, habilitarFormador, deshabilitarFormador,
   establecerDisponibilidad, crearExcepcion, eliminarExcepcion,
 } from "../services/catalogos.service";
-import { cancelarComoAdmin } from "../services/reserva.service";
+import { cancelarComoAdmin, sincronizarEstadosReservas } from "../services/reserva.service";
 import {
   reemplazosPara, fechasAlternativas, aprobarReasignacion, rechazarReasignacion,
   marcarSinReemplazo, proponerNuevaFecha,
@@ -128,6 +128,8 @@ export const eliminarExcepcionCtrl = ah(async (req: Request, res: Response) => {
 
 export const listarReservas = ah(async (req: Request, res: Response) => {
   const f = req.query as unknown as FiltroEstadisticas;
+  // Refleja el ciclo de vida (CONFIRMADA → EN_CURSO → FINALIZADA) aunque el job no haya corrido aún
+  await sincronizarEstadosReservas();
   const reservas = await prisma.reserva.findMany({
     where: {
       ...(f.estado ? { estado: f.estado } : {}),
@@ -140,7 +142,7 @@ export const listarReservas = ah(async (req: Request, res: Response) => {
       formador: { include: { cuenta: { select: { nombreCompleto: true, correo: true } } } },
       _count: { select: { asistencias: true } },
     },
-    orderBy: { iniciaAt: "desc" },
+    orderBy: { iniciaAt: f.orden ?? "desc" },
     take: 500,
   });
   res.json(reservas.map(r => ({
@@ -260,7 +262,7 @@ export const exportarCtrl = ah(async (req: Request, res: Response) => {
   if (!["reservas", "estadisticas", "asistencia"].includes(tipo)) throw badRequest("Tipo inválido");
   const buffer = await exportar(tipo, req.query as unknown as FiltroEstadisticas, req.query.reservaId as string | undefined);
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename="sifoin-${tipo}.xlsx"`);
+  res.setHeader("Content-Disposition", `attachment; filename="sifoin-${tipo}-${new Date().toISOString().slice(0, 10)}.xlsx"`);
   res.send(Buffer.from(buffer as ArrayBuffer));
 });
 

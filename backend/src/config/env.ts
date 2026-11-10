@@ -13,6 +13,7 @@ export const env = {
   sessionTtlHours: Number(req("SESSION_TTL_HOURS", "8")),
   corsOrigins: req("CORS_ORIGIN", "http://localhost:3000,http://localhost:5173").split(",").map(s => s.trim()),
   publicAppUrl: req("PUBLIC_APP_URL", "http://localhost:3000"),
+  escudoUrl: req("ESCUDO_URL", "https://ecosistema.colmayor.edu.co/auditorio/colmayor.png"),
   smtp: {
     host: req("SMTP_HOST", ""),
     port: Number(req("SMTP_PORT", "587")),
@@ -25,6 +26,7 @@ export const env = {
   outboxPollMs: Number(req("OUTBOX_POLL_MS", "15000")),
   qrJobPollMs: Number(req("QR_JOB_POLL_MS", "30000")),
   finalizaJobPollMs: Number(req("FINALIZA_JOB_POLL_MS", "600000")),
+  recordatorioJobPollMs: Number(req("RECORDATORIO_JOB_POLL_MS", "300000")),
   nodeEnv: req("NODE_ENV", "development"),
 };
 

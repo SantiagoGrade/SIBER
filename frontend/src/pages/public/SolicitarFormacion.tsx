@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, mensajeError } from "../../api/client";
 import { PublicLayout } from "../../components/Layout";
-import { Spinner, ErrorMsg, OkMsg, fmtHora } from "../../components/ui";
+import { Spinner, ErrorMsg, OkMsg, IconoExito, Select, fmtHora } from "../../components/ui";
 import { Curso, CatalogoItem, Franja, DisponibilidadPublica } from "../../api/types";
 
 const PASOS = ["Curso", "Fecha y hora", "Tus datos", "Confirmación"];
@@ -329,10 +329,8 @@ export default function SolicitarFormacion() {
             </div>
             <div>
               <label className="label-base">Facultad</label>
-              <select className="input-base" value={f.facultadId} onChange={e => setF({ ...f, facultadId: e.target.value })}>
-                <option value="">Selecciona tu facultad</option>
-                {facultades.map(x => <option key={x.id} value={x.id}>{x.nombre}</option>)}
-              </select>
+              <Select value={f.facultadId} onChange={v => setF({ ...f, facultadId: v })}
+                opciones={[{ value: "", label: "Selecciona tu facultad" }, ...facultades.map(x => ({ value: x.id, label: x.nombre }))]} />
             </div>
             <div className="text-sm bg-gray-50 rounded-xl p-3">
               <strong>Resumen:</strong> {cursos.find(c => c.id === f.cursoId)?.nombre} · {f.fecha} · {f.horaInicio}–{f.horaFin}
@@ -348,11 +346,11 @@ export default function SolicitarFormacion() {
 
         {paso === 3 && confirmacion && (
           <div className="text-center py-8">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-xl font-bold text-primary">Reserva confirmada</h2>
-            <p className="mt-2 text-gray-600">Tu código de reserva es</p>
-            <p className="text-2xl font-mono font-bold mt-1">{confirmacion.codigo}</p>
-            <OkMsg msg="Recibirás un correo con los detalles y el enlace de cancelación." />
+            <IconoExito />
+            <h2 className="mt-4 text-xl font-bold text-primary">Reserva confirmada</h2>
+            <p className="mt-2 text-sm text-gray-500">Tu código de reserva es</p>
+            <p className="mt-1 inline-block rounded-xl bg-gray-50 px-4 py-2 text-2xl font-mono font-bold tracking-wider text-gray-900">{confirmacion.codigo}</p>
+            <div className="mt-4"><OkMsg msg="Recibirás un correo con los detalles y el enlace de cancelación." /></div>
           </div>
         )}
       </div>

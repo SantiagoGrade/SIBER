@@ -99,16 +99,21 @@ export function proximoHorarioCubierto(duracionHoras = 1, anticipacionHoras = 50
 
 export async function crearReservaDirecta(params: {
   cursoId: string; formadorId: string; inicio: DateTime; fin: DateTime;
-  estado?: "CONFIRMADA" | "FINALIZADA" | "CANCELADA";
+  estado?: "CONFIRMADA" | "EN_CURSO" | "FINALIZADA" | "CANCELADA";
   docenteCorreo?: string;
+  docenteNombre?: string;
+  docenteTelefono?: string;
+  aula?: string;
 }) {
   return prisma.reserva.create({
     data: {
       codigo: `TEST-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       cursoId: params.cursoId,
       formadorId: params.formadorId,
-      docenteNombre: "Docente Test",
+      docenteNombre: params.docenteNombre ?? "Docente Test",
       docenteCorreo: params.docenteCorreo ?? "docente@test.local",
+      docenteTelefono: params.docenteTelefono ?? null,
+      aula: params.aula ?? null,
       iniciaAt: params.inicio.toJSDate(),
       terminaAt: params.fin.toJSDate(),
       estado: params.estado ?? "CONFIRMADA",

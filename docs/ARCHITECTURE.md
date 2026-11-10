@@ -2,17 +2,17 @@
 
 ```
 Navegador → Vite dev proxy / nginx → Express /api/v1 → Prisma → PostgreSQL
-                                           └→ jobs: outbox, QR(+30'), finalización
+                                           └→ jobs: outbox, QR(+30'), finalización, recordatorios
 ```
 
 ## Capas backend (`backend/src`)
 
 - `routes/index.ts` — composición de routers `/api/v1` (auth, público, admin, formador).
 - `controllers/` — traducen HTTP ↔ servicios; sin reglas de negocio.
-- `services/` — lógica transaccional: reservas, asignación, disponibilidad, reasignación, QR, asistencia, notificaciones, estadísticas, exportación, cuentas, catálogos.
+- `services/` — lógica transaccional: reservas, asignación, disponibilidad, reasignación, QR, asistencia, notificaciones (outbox), correo + plantillas HTML, recordatorios, estadísticas, exportación, cuentas, catálogos, configuración.
 - `utils/` — funciones puras: matemática de franjas (`disponibilidad.ts`), tiempo Bogotá (`tiempo.ts`), tokens/cifrado (`tokens.ts`), errores.
-- `middleware/` — JWT cookie (`auth.ts`), Zod (`validate.ts`), rate limiting, errores centralizados (`errors.ts`).
-- `jobs/` — `procesarOutbox` (15 s), `procesarEnviosQr` (30 s), `finalizarVencidas` (10 min); estado persistido → sobreviven reinicios.
+- `middleware/` — JWT cookie (`auth.ts`), Zod + rate limiting (`validate.ts`), errores centralizados (`errors.ts`).
+- `jobs/` — `procesarOutbox` (15 s), `procesarEnviosQr` (30 s), `sincronizarEstadosReservas` (10 min), `procesarRecordatorios` (5 min); estado persistido → sobreviven reinicios.
 
 ## Decisiones estructurales
 

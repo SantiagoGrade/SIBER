@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, mensajeError } from "../../api/client";
 import { PublicLayout } from "../../components/Layout";
-import { Spinner, ErrorMsg, Estrellas } from "../../components/ui";
+import { Spinner, ErrorMsg, Estrellas, IconoExito } from "../../components/ui";
 import { CatalogoItem } from "../../api/types";
 
 interface InfoQr { ok: boolean; reservaId?: string; curso?: string; fecha?: string; horaInicio?: string; horaFin?: string; codigo?: string }
@@ -76,9 +76,9 @@ export default function Asistencia() {
     return (
       <PublicLayout>
         <div className="card mt-6 text-center py-10">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-xl font-bold text-primary">¡Gracias por participar!</h1>
-          <p className="text-gray-600 mt-2">Tu asistencia y evaluación quedaron registradas.</p>
+          <IconoExito />
+          <h1 className="mt-4 text-xl font-bold text-primary">¡Gracias por participar!</h1>
+          <p className="mt-2 text-sm text-gray-600">Tu asistencia y evaluación quedaron registradas.</p>
         </div>
       </PublicLayout>
     );

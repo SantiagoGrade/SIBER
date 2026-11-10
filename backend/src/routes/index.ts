@@ -75,7 +75,7 @@ router.use("/admin", admin);
 const formador = Router();
 formador.use(autenticar, soloFormador);
 formador.get("/calendario", frm.miCalendario);
-formador.get("/reservas", frm.misReservas);
+formador.get("/reservas", validar(s.filtroEstadisticasSchema, "query"), frm.misReservas);
 formador.get("/disponibilidad", frm.miDisponibilidad);
 formador.get("/dashboard", validar(s.filtroEstadisticasSchema, "query"), frm.miDashboard);
 formador.post("/reasignaciones", validar(s.reasignacionSchema), frm.solicitarReasignacionCtrl);

@@ -1,7 +1,8 @@
 import { env } from "../config/env";
 import { procesarOutbox } from "../services/notificacion.service";
 import { procesarEnviosQr } from "../services/qr.service";
-import { finalizarVencidas } from "../services/reserva.service";
+import { sincronizarEstadosReservas } from "../services/reserva.service";
+import { procesarRecordatorios } from "../services/recordatorio.service";
 
 const timers: NodeJS.Timeout[] = [];
 
@@ -22,8 +23,9 @@ function ciclo(nombre: string, ms: number, fn: () => Promise<number>) {
 export function iniciarJobs() {
   ciclo("outbox", env.outboxPollMs, procesarOutbox);
   ciclo("qr", env.qrJobPollMs, procesarEnviosQr);
-  ciclo("finalizar", env.finalizaJobPollMs, finalizarVencidas);
-  console.log("[jobs] iniciados: outbox, qr, finalizar");
+  ciclo("estados-reserva", env.finalizaJobPollMs, sincronizarEstadosReservas);
+  ciclo("recordatorios", env.recordatorioJobPollMs, () => procesarRecordatorios());
+  console.log("[jobs] iniciados: outbox, qr, estados-reserva, recordatorios");
 }
 
 export function detenerJobs() {

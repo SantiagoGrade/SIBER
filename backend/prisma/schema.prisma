@@ -17,6 +17,7 @@ enum RolCuenta {
 
 enum EstadoReserva {
   CONFIRMADA
+  EN_CURSO
   FINALIZADA
   CANCELADA
 }

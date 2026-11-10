@@ -3,6 +3,7 @@ import { ah } from "../middleware/asyncHandler";
 import { prisma } from "../repositories/prisma";
 import { forbidden, notFound } from "../utils/errors";
 import { solicitarReasignacion } from "../services/reasignacion.service";
+import { sincronizarEstadosReservas } from "../services/reserva.service";
 import { estadisticasFormador, FiltroEstadisticas } from "../services/estadisticas.service";
 import { franjasEfectivas } from "../services/disponibilidad.service";
 import { aBogota } from "../utils/tiempo";
@@ -18,13 +19,14 @@ function formadorIdDe(req: Request): string {
 /** Calendario del formador: reservas + disponibilidad efectiva + excepciones */
 export const miCalendario = ah(async (req: Request, res: Response) => {
   const fid = formadorIdDe(req);
+  await sincronizarEstadosReservas();
   const desde = aBogota(new Date(req.query.desde as string));
   const hasta = aBogota(new Date(req.query.hasta as string));
 
   const [reservas, efectivas, excepciones] = await Promise.all([
     prisma.reserva.findMany({
       where: { formadorId: fid, iniciaAt: { lt: hasta.toJSDate() }, terminaAt: { gt: desde.toJSDate() } },
-      include: { curso: true },
+      include: { curso: true, facultad: true, _count: { select: { asistencias: true } } },
       orderBy: { iniciaAt: "asc" },
     }),
     franjasEfectivas(prisma, fid, desde, hasta),
@@ -37,7 +39,11 @@ export const miCalendario = ah(async (req: Request, res: Response) => {
     reservas: reservas.map(r => ({
       id: r.id, codigo: r.codigo, curso: r.curso.nombre,
       iniciaAt: r.iniciaAt, terminaAt: r.terminaAt, estado: r.estado,
-      docenteNombre: r.docenteNombre, incidenciaPendiente: r.incidenciaPendiente,
+      docenteNombre: r.docenteNombre, docenteCorreo: r.docenteCorreo,
+      docenteTelefono: r.docenteTelefono, aula: r.aula,
+      facultad: r.facultad?.nombre ?? null,
+      asistentes: r._count.asistencias,
+      incidenciaPendiente: r.incidenciaPendiente,
     })),
     disponible: efectivas.map(f => ({ inicio: f.inicio.toISO(), fin: f.fin.toISO() })),
     excepciones: excepciones.map(e => ({
@@ -48,11 +54,18 @@ export const miCalendario = ah(async (req: Request, res: Response) => {
 
 export const misReservas = ah(async (req: Request, res: Response) => {
   const fid = formadorIdDe(req);
+  await sincronizarEstadosReservas();
+  const f = req.query as unknown as FiltroEstadisticas;
   const reservas = await prisma.reserva.findMany({
-    where: { formadorId: fid },
+    where: {
+      formadorId: fid,
+      ...(f.estado ? { estado: f.estado } : {}),
+      ...(f.cursoId ? { cursoId: f.cursoId } : {}),
+      ...(f.desde || f.hasta ? { iniciaAt: { ...(f.desde ? { gte: f.desde } : {}), ...(f.hasta ? { lt: f.hasta } : {}) } } : {}),
+    },
     include: { curso: true, _count: { select: { asistencias: true } } },
-    orderBy: { iniciaAt: "desc" },
-    take: 200,
+    orderBy: { iniciaAt: f.orden ?? "desc" },
+    take: 500,
   });
   res.json(reservas.map(r => ({
     id: r.id, codigo: r.codigo, curso: r.curso.nombre,
@@ -126,6 +139,6 @@ export const exportarAsistenciaMia = ah(async (req: Request, res: Response) => {
   await verificarPropiedad(req);
   const buffer = await exportar("asistencia", {}, req.params.id);
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename="asistencia.xlsx"`);
+  res.setHeader("Content-Disposition", `attachment; filename="sifoin-asistencia-${new Date().toISOString().slice(0, 10)}.xlsx"`);
   res.send(Buffer.from(buffer as ArrayBuffer));
 });

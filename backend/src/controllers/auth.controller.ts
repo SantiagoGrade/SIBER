@@ -48,7 +48,6 @@ export const cambiarPasswordCtrl = ah(async (req: Request, res: Response) => {
 
 export const recuperar = ah(async (req: Request, res: Response) => {
   await solicitarRecuperacion(req.body.correo);
-  // Respuesta uniforme (anti-enumeración)
   res.json({ ok: true });
 });
 

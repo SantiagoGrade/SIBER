@@ -130,6 +130,18 @@ describe("Estadísticas", () => {
     expect(s.formacionesImpartidas).toBe(1);
   });
 
+  it("reservasPorMes agrupa la demanda por mes de inicio y excluye canceladas", async () => {
+    const { curso1, f1 } = await seed();
+    const enero = DateTime.fromISO("2026-01-15T10:00", { zone: ZONA });
+    const febrero = DateTime.fromISO("2026-02-15T10:00", { zone: ZONA });
+    await crearReservaDirecta({ cursoId: curso1.id, formadorId: f1.formadorId, inicio: enero, fin: enero.plus({ hours: 2 }) });
+    await crearReservaDirecta({ cursoId: curso1.id, formadorId: f1.formadorId, inicio: enero.plus({ days: 2 }), fin: enero.plus({ days: 2, hours: 2 }) });
+    await crearReservaDirecta({ cursoId: curso1.id, formadorId: f1.formadorId, inicio: febrero, fin: febrero.plus({ hours: 2 }), estado: "CANCELADA" });
+
+    const s = await estadisticasAdmin({});
+    expect(s.reservasPorMes).toEqual([{ mes: "2026-01", total: 2 }]);
+  });
+
   it("finalizadas sin evaluación se reportan para revisión", async () => {
     const { curso1, f1 } = await seed();
     await crearReservaDirecta({ cursoId: curso1.id, formadorId: f1.formadorId, inicio: proximoDia(1).inicio.minus({ days: 7 }), fin: proximoDia(1).fin.minus({ days: 7 }), estado: "FINALIZADA" });

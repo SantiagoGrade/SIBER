@@ -21,7 +21,7 @@ export default function Recuperar() {
     <AuthLayout>
       <form onSubmit={enviar} className="card space-y-4 p-6 sm:p-8">
         <AuthMarca titulo="Recuperar contraseña" />
-        {ok ? <OkMsg msg="Si el correo está registrado recibirás un enlace para restablecer tu contraseña." /> : (
+        {ok ? <OkMsg msg="Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo (y la carpeta de spam)." /> : (
           <>
             <ErrorMsg msg={error} />
             <div>

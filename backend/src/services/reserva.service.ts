@@ -74,7 +74,7 @@ export async function crearReserva(input: SolicitudReservaInput, idempotencyKey?
         const solape = await tx.reserva.findFirst({
           where: {
             formadorId: elegido.formadorId,
-            estado: { in: ["CONFIRMADA", "FINALIZADA"] },
+            estado: { in: ["CONFIRMADA", "EN_CURSO", "FINALIZADA"] },
             iniciaAt: { lt: fin.toJSDate() },
             terminaAt: { gt: inicio.toJSDate() },
           },
@@ -245,12 +245,13 @@ async function efectuarCancelacion(tx: Tx, reservaId: string, motivo: string, ac
 }
 
 /**
- * Finaliza reservas cuyo horario terminó. Idempotente; solo CONFIRMADA → FINALIZADA.
+ * Marca EN_CURSO las reservas cuya hora de inicio ya llegó.
+ * Idempotente; solo CONFIRMADA → EN_CURSO.
  */
-export async function finalizarVencidas(): Promise<number> {
+export async function iniciarVigentes(): Promise<number> {
   const ahoraDate = new Date();
   const candidatas = await prisma.reserva.findMany({
-    where: { estado: "CONFIRMADA", terminaAt: { lt: ahoraDate } },
+    where: { estado: "CONFIRMADA", iniciaAt: { lte: ahoraDate }, terminaAt: { gt: ahoraDate } },
     select: { id: true },
     take: 200,
   });
@@ -258,6 +259,31 @@ export async function finalizarVencidas(): Promise<number> {
   for (const c of candidatas) {
     const r = await prisma.reserva.updateMany({
       where: { id: c.id, estado: "CONFIRMADA" },
+      data: { estado: "EN_CURSO" },
+    });
+    if (r.count > 0) {
+      await prisma.historialReserva.create({ data: { reservaId: c.id, evento: "EN_CURSO" } });
+      n++;
+    }
+  }
+  return n;
+}
+
+/**
+ * Finaliza reservas cuyo horario terminó. Idempotente; CONFIRMADA/EN_CURSO → FINALIZADA.
+ * (CONFIRMADA se conserva como red de seguridad por si la transición a EN_CURSO no corrió.)
+ */
+export async function finalizarVencidas(): Promise<number> {
+  const ahoraDate = new Date();
+  const candidatas = await prisma.reserva.findMany({
+    where: { estado: { in: ["CONFIRMADA", "EN_CURSO"] }, terminaAt: { lt: ahoraDate } },
+    select: { id: true },
+    take: 200,
+  });
+  let n = 0;
+  for (const c of candidatas) {
+    const r = await prisma.reserva.updateMany({
+      where: { id: c.id, estado: { in: ["CONFIRMADA", "EN_CURSO"] } },
       data: { estado: "FINALIZADA", finalizadaAt: ahoraDate },
     });
     if (r.count > 0) {
@@ -277,6 +303,14 @@ export async function finalizarVencidas(): Promise<number> {
     data: { estado: "CERRADO" },
   });
   return n;
+}
+
+/**
+ * Ciclo de vida completo según el horario: CONFIRMADA → EN_CURSO → FINALIZADA.
+ * Lo corre el job y también los listados para reflejar el estado en tiempo real.
+ */
+export async function sincronizarEstadosReservas(): Promise<number> {
+  return (await iniciarVigentes()) + (await finalizarVencidas());
 }
 
 /** Consulta del token de cancelación: datos mínimos para mostrar antes de confirmar. */

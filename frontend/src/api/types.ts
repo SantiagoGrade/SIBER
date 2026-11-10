@@ -17,7 +17,7 @@ export interface Reserva {
   docenteTelefono?: string | null; aula?: string | null;
   facultad: string | null;
   iniciaAt: string; terminaAt: string;
-  estado: "CONFIRMADA" | "FINALIZADA" | "CANCELADA";
+  estado: "CONFIRMADA" | "EN_CURSO" | "FINALIZADA" | "CANCELADA";
   incidenciaPendiente: boolean; asistentes: number;
 }
 
@@ -41,12 +41,13 @@ export interface Reasignacion {
 export interface Promedio { promedio: number | null; respuestas: number }
 
 export interface StatsAdmin {
-  reservas: { solicitadas: number; confirmadas: number; finalizadas: number; canceladas: number; proximas: number };
+  reservas: { solicitadas: number; confirmadas: number; enCurso: number; finalizadas: number; canceladas: number; proximas: number };
   reasignacionesPendientes: number;
   totalAsistentes: number;
   horasImpartidas: number;
   cargaPorFormador: { formadorId: string; nombre: string; minutos: number; reservas: number; horas: number }[];
   cursosMasSolicitados: { cursoId: string; nombre: string; reservas: number }[];
+  reservasPorMes: { mes: string; total: number }[];
   satisfaccion: {
     calificacionGeneral: Promedio;
     totalEvaluaciones: number;
@@ -55,7 +56,7 @@ export interface StatsAdmin {
     porFormador: { formadorId: string; nombre: string; promedio: number | null; respuestas: number }[];
     evolucion: { mes: string; promedio: number | null; respuestas: number }[];
     distribucion: { estrellas: number; cantidad: number }[];
-    comentarios: { curso: string; formador: string; fecha: string; observaciones: string | null; calificacion: number }[];
+    comentarios: { codigo: string; curso: string; formador: string; asistente: string; fecha: string; observaciones: string | null; calificacion: number }[];
     finalizadasSinEvaluacion: number;
   };
 }

@@ -66,8 +66,10 @@ export async function cambiarPassword(cuentaId: string, actual: string, nueva: s
 
 export async function solicitarRecuperacion(correo: string) {
   const cuenta = await prisma.cuenta.findUnique({ where: { correo: correo.toLowerCase() } });
-  // No revelar si el correo existe (anti-enumeración)
-  if (!cuenta || !cuenta.activo) return;
+  // Respuesta inmediata: el usuario sabe al instante si el correo existe.
+  // (El rate limit `limitadorPublico` mitiga la enumeración de correos.)
+  if (!cuenta) throw notFound("No existe una cuenta registrada con ese correo");
+  if (!cuenta.activo) throw badRequest("La cuenta asociada a ese correo está inactiva. Contacta al administrador");
   const token = generarToken();
   await prisma.$transaction(async (tx) => {
     await tx.tokenSeguro.create({
@@ -118,10 +120,10 @@ export async function actualizarCuenta(cuentaId: string, params: {
       const nuevoRol = params.rol ?? cuenta.rol;
       if (nuevoRol !== "FORMADOR" && cuenta.rol === "FORMADOR" && cuenta.formador) {
         const futuras = await tx.reserva.count({
-          where: { formadorId: cuenta.formador.id, estado: "CONFIRMADA", iniciaAt: { gt: new Date() } },
+          where: { formadorId: cuenta.formador.id, estado: { in: ["CONFIRMADA", "EN_CURSO"] }, terminaAt: { gt: new Date() } },
         });
         if (futuras > 0) {
-          throw conflict(`El formador tiene ${futuras} reservas futuras; reasígnalas o cancélalas antes de cambiar el rol`);
+          throw conflict(`El formador tiene ${futuras} reservas vigentes; reasígnalas o cancélalas antes de cambiar el rol`);
         }
       }
 
@@ -141,14 +143,14 @@ export async function actualizarCuenta(cuentaId: string, params: {
         if (eliminados.length) {
           const bloqueadas = await tx.reserva.groupBy({
             by: ["cursoId"],
-            where: { formadorId, cursoId: { in: eliminados }, estado: "CONFIRMADA", iniciaAt: { gt: new Date() } },
+            where: { formadorId, cursoId: { in: eliminados }, estado: { in: ["CONFIRMADA", "EN_CURSO"] }, terminaAt: { gt: new Date() } },
             _count: true,
           });
           if (bloqueadas.length) {
             const nombres = (await tx.curso.findMany({
               where: { id: { in: bloqueadas.map(b => b.cursoId) } }, select: { nombre: true },
             })).map(c => c.nombre);
-            throw conflict(`No se pueden quitar cursos con reservas futuras: ${nombres.join(", ")}`);
+            throw conflict(`No se pueden quitar cursos con reservas vigentes: ${nombres.join(", ")}`);
           }
           await tx.formadorCurso.deleteMany({ where: { formadorId, cursoId: { in: eliminados } } });
         }
@@ -186,10 +188,10 @@ export async function desactivarCuenta(cuentaId: string, actorCuentaId: string, 
   if (cuentaId === actorCuentaId) throw badRequest("No puedes desactivar tu propia cuenta");
   if (cuenta.formador) {
     const pendientes = await prisma.reserva.count({
-      where: { formadorId: cuenta.formador.id, estado: "CONFIRMADA", iniciaAt: { gt: new Date() } },
+      where: { formadorId: cuenta.formador.id, estado: { in: ["CONFIRMADA", "EN_CURSO"] }, terminaAt: { gt: new Date() } },
     });
     if (pendientes > 0) {
-      throw conflict(`El formador tiene ${pendientes} reservas futuras; reasígnalas o cancélalas antes`);
+      throw conflict(`El formador tiene ${pendientes} reservas vigentes; reasígnalas o cancélalas antes`);
     }
   }
   await prisma.$transaction(async (tx) => {

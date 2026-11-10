@@ -8,13 +8,14 @@ export interface FiltroEstadisticas {
   cursoId?: string;
   formadorId?: string;
   facultadId?: string;
-  estado?: "CONFIRMADA" | "FINALIZADA" | "CANCELADA";
+  estado?: "CONFIRMADA" | "EN_CURSO" | "FINALIZADA" | "CANCELADA";
+  orden?: "asc" | "desc";
   mes?: number;       // 1-12
   semestre?: 1 | 2;   // 1 = ene-jun, 2 = jul-dic
   anio?: number;
 }
 
-function whereReserva(f: FiltroEstadisticas) {
+export function whereReserva(f: FiltroEstadisticas) {
   let desde = f.desde;
   let hasta = f.hasta;
   if (f.anio) {
@@ -63,7 +64,10 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
   const idsValidas = reservas.filter(r => r.estado !== "CANCELADA").map(r => r.id);
   const evaluaciones = await prisma.evaluacionFormacion.findMany({
     where: { reservaId: { in: idsValidas } },
-    include: { reserva: { select: { cursoId: true, formadorId: true, iniciaAt: true, curso: { select: { nombre: true } }, formador: { select: { cuenta: { select: { nombreCompleto: true } } } } } } },
+    include: {
+      reserva: { select: { codigo: true, cursoId: true, formadorId: true, iniciaAt: true, docenteNombre: true, curso: { select: { nombre: true } }, formador: { select: { cuenta: { select: { nombreCompleto: true } } } } } },
+      asistencia: { select: { nombreCompleto: true } },
+    },
   });
   const asistencias = await prisma.asistencia.count({ where: { reservaId: { in: idsValidas } } });
 
@@ -81,9 +85,12 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
   // Carga laboral por formador (horas de reservas no canceladas en el filtro)
   const cargaPorFormador = new Map<string, { nombre: string; minutos: number; reservas: number }>();
   const demandaPorCurso = new Map<string, { nombre: string; reservas: number }>();
+  const demandaPorMes = new Map<string, number>();
   for (const r of reservas) {
     if (r.estado === "CANCELADA") continue;
     const nombre = r.formador.cuenta.nombreCompleto;
+    const mes = aBogota(r.iniciaAt).toFormat("yyyy-MM");
+    demandaPorMes.set(mes, (demandaPorMes.get(mes) ?? 0) + 1);
     const cf = cargaPorFormador.get(r.formadorId) ?? { nombre, minutos: 0, reservas: 0 };
     cf.minutos += (r.terminaAt.getTime() - r.iniciaAt.getTime()) / 60000;
     cf.reservas += 1;
@@ -126,8 +133,10 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
   const comentarios = evaluaciones
     .filter(e => e.observaciones)
     .map(e => ({
+      codigo: e.reserva.codigo,
       curso: e.reserva.curso.nombre,
       formador: e.reserva.formador.cuenta.nombreCompleto,
+      asistente: e.asistencia.nombreCompleto,
       fecha: e.fechaRegistro,
       observaciones: e.observaciones,
       calificacion: e.calificacionGeneral,
@@ -141,6 +150,7 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
     reservas: {
       solicitadas: reservas.length,
       confirmadas: conteo["CONFIRMADA"] ?? 0,
+      enCurso: conteo["EN_CURSO"] ?? 0,
       finalizadas: conteo["FINALIZADA"] ?? 0,
       canceladas: conteo["CANCELADA"] ?? 0,
       proximas,
@@ -154,6 +164,7 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
     cursosMasSolicitados: [...demandaPorCurso.entries()]
       .map(([id, v]) => ({ cursoId: id, ...v }))
       .sort((a, b) => b.reservas - a.reservas),
+    reservasPorMes: [...demandaPorMes.entries()].sort().map(([mes, total]) => ({ mes, total })),
     satisfaccion: {
       calificacionGeneral: promedio(calGen),
       totalEvaluaciones: evaluaciones.length,
@@ -172,6 +183,7 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
 export async function estadisticasFormador(formadorId: string, f: FiltroEstadisticas) {
   const base = await estadisticasAdmin({ ...f, formadorId });
   const ahora = new Date();
+  const where = whereReserva(f);
 
   const reservas = await prisma.reserva.findMany({
     where: { formadorId, estado: { not: "CANCELADA" }, iniciaAt: { gte: ahora } },
@@ -186,19 +198,19 @@ export async function estadisticasFormador(formadorId: string, f: FiltroEstadist
   });
 
   const impartidas = await prisma.reserva.count({
-    where: { formadorId, estado: "FINALIZADA" },
+    where: { ...where, formadorId, estado: "FINALIZADA" },
   });
 
   // Evolución de calificaciones del formador por mes
   const evaluaciones = await prisma.evaluacionFormacion.findMany({
-    where: { reserva: { formadorId, estado: { not: "CANCELADA" } } },
+    where: { reserva: { ...where, formadorId, estado: f.estado ?? { not: "CANCELADA" } } },
     orderBy: { fechaRegistro: "asc" },
     include: { reserva: { select: { curso: { select: { nombre: true } } } } },
   });
   const evol = new Map<string, number[]>();
   const porCurso = new Map<string, number[]>();
   const asistPorReserva = await prisma.asistencia.groupBy({
-    by: ["reservaId"], where: { reserva: { formadorId } }, _count: true,
+    by: ["reservaId"], where: { reserva: { ...where, formadorId } }, _count: true,
   });
 
   for (const e of evaluaciones) {

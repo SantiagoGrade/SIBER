@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ManualUsuario } from "./ManualUsuario";
 
 interface NavItem { to: string; label: string; end?: boolean }
 
@@ -18,6 +19,7 @@ function Header({ items }: { items: NavItem[] }) {
   const { cuenta, logout } = useAuth();
   const nav = useNavigate();
   const [abierto, setAbierto] = useState(false);
+  const [ayuda, setAyuda] = useState(false);
 
   const salir = async () => { await logout(); nav("/login"); };
 
@@ -44,6 +46,14 @@ function Header({ items }: { items: NavItem[] }) {
                 {cuenta.nombreCompleto}
               </span>
             )}
+            <button
+              onClick={() => setAyuda(true)}
+              title="Manual de usuario"
+              aria-label="Manual de usuario"
+              className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-primary/40 text-sm font-bold text-primary transition duration-150 hover:bg-primary/10"
+            >
+              ?
+            </button>
             <button
               onClick={salir}
               className="ml-1 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold text-red-600 transition duration-150 hover:bg-red-50"
@@ -76,30 +86,39 @@ function Header({ items }: { items: NavItem[] }) {
             </NavLink>
           ))}
           <hr className="my-1 border-gray-100" />
+          <button onClick={() => { setAbierto(false); setAyuda(true); }} className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-primary transition hover:bg-primary/10">
+            Ayuda · Manual de usuario
+          </button>
           <button onClick={salir} className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
             Cerrar sesión
           </button>
         </div>
       )}
+
+      {cuenta && <ManualUsuario abierto={ayuda} onClose={() => setAyuda(false)} rol={cuenta.rol} />}
     </header>
   );
 }
 
-function Shell({ children, items, titulo }: { children: ReactNode; items: NavItem[]; titulo: string }) {
+function Shell({ children, items, titulo, amplio = true }: { children: ReactNode; items: NavItem[]; titulo: string; amplio?: boolean }) {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-primary to-accent">
       <Header items={items} />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="card mb-6 px-6 py-4">
-          <h1 className="text-2xl font-bold text-primary">{titulo}</h1>
-        </div>
+      <main className={`mx-auto w-full flex-1 px-4 pb-8 sm:px-6 ${amplio ? "max-w-screen-2xl pt-4 lg:px-8" : "max-w-7xl pt-8 lg:px-8"}`}>
+        {amplio ? (
+          <h1 className="mb-4 text-2xl font-bold text-white">{titulo}</h1>
+        ) : (
+          <div className="card mb-6 px-6 py-4">
+            <h1 className="text-2xl font-bold text-primary">{titulo}</h1>
+          </div>
+        )}
         {children}
       </main>
     </div>
   );
 }
 
-export function AdminLayout({ children, titulo }: { children: ReactNode; titulo: string }) {
+export function AdminLayout({ children, titulo, amplio }: { children: ReactNode; titulo: string; amplio?: boolean }) {
   const items: NavItem[] = [
     { to: "/admin", label: "Dashboard", end: true },
     { to: "/admin/reservas", label: "Reservas" },
@@ -108,10 +127,10 @@ export function AdminLayout({ children, titulo }: { children: ReactNode; titulo:
 
     { to: "/admin/configuracion", label: "Configuración" },
   ];
-  return <Shell items={items} titulo={titulo}>{children}</Shell>;
+  return <Shell items={items} titulo={titulo} amplio={amplio}>{children}</Shell>;
 }
 
-export function FormadorLayout({ children, titulo }: { children: ReactNode; titulo: string }) {
+export function FormadorLayout({ children, titulo, amplio }: { children: ReactNode; titulo: string; amplio?: boolean }) {
   const items: NavItem[] = [
     { to: "/formador", label: "Mi dashboard", end: true },
     { to: "/formador/calendario", label: "Mi calendario" },
@@ -119,7 +138,7 @@ export function FormadorLayout({ children, titulo }: { children: ReactNode; titu
     { to: "/formador/disponibilidad", label: "Mi disponibilidad" },
     { to: "/formador/reasignaciones", label: "Reasignaciones" },
   ];
-  return <Shell items={items} titulo={titulo}>{children}</Shell>;
+  return <Shell items={items} titulo={titulo} amplio={amplio}>{children}</Shell>;
 }
 
 export function AuthLayout({ children }: { children: ReactNode }) {

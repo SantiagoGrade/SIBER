@@ -16,7 +16,7 @@ docker compose exec backend npx tsx prisma/seed.ts
 - `frontend`: nginx :3001.
 
 ## Variables de entorno (backend/.env)
-`DATABASE_URL`, `JWT_SECRET` (largo y aleatorio), `CORS_ORIGIN`, `PUBLIC_APP_URL` (para enlaces de correos), `SMTP_*`, `SEED_ADMIN_*`, `PORT`, intervalos de jobs (`OUTBOX_POLL_MS`, `QR_JOB_POLL_MS`, `FINALIZA_JOB_POLL_MS`).
+`DATABASE_URL`, `JWT_SECRET` (largo y aleatorio), `SESSION_TTL_HOURS` (8), `CORS_ORIGIN`, `PUBLIC_APP_URL` (para enlaces de correos), `ESCUDO_URL` (imagen institucional en correos), `SMTP_*`, `SEED_ADMIN_*`, `PORT`, intervalos de jobs (`OUTBOX_POLL_MS` 15 s, `QR_JOB_POLL_MS` 30 s, `FINALIZA_JOB_POLL_MS` 10 min, `RECORDATORIO_JOB_POLL_MS` 5 min).
 
 ## SMTP
 Cualquier SMTP compatible con Nodemailer. El outbox y el envío del QR toleran SMTP caído (reintentos con backoff, estado persistido).

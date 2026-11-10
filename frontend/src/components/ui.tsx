@@ -1,4 +1,80 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+
+export interface OpcionSelect { value: string; label: string }
+
+export function Select({ value, onChange, opciones, placeholder = "Selecciona", id, className }: {
+  value: string;
+  onChange: (v: string) => void;
+  opciones: OpcionSelect[];
+  placeholder?: string;
+  id?: string;
+  className?: string;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cerrar = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setAbierto(false);
+    };
+    document.addEventListener("mousedown", cerrar);
+    return () => document.removeEventListener("mousedown", cerrar);
+  }, []);
+
+  const actual = opciones.find(o => o.value === value);
+  const abrir = () => {
+    setIdx(Math.max(0, opciones.findIndex(o => o.value === value)));
+    setAbierto(true);
+  };
+  const elegir = (v: string) => { onChange(v); setAbierto(false); };
+
+  return (
+    <div ref={ref} className={`relative ${className ?? ""}`}>
+      <button
+        id={id} type="button"
+        aria-haspopup="listbox" aria-expanded={abierto}
+        className="input-base flex items-center justify-between gap-2 text-left"
+        onClick={() => (abierto ? setAbierto(false) : abrir())}
+        onKeyDown={e => {
+          if (e.key === "Escape") return setAbierto(false);
+          if (!abierto) {
+            if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) { e.preventDefault(); abrir(); }
+            return;
+          }
+          if (e.key === "ArrowDown") { e.preventDefault(); setIdx(i => Math.min(i + 1, opciones.length - 1)); }
+          if (e.key === "ArrowUp") { e.preventDefault(); setIdx(i => Math.max(i - 1, 0)); }
+          if (e.key === "Enter") { e.preventDefault(); const o = opciones[idx]; if (o) elegir(o.value); }
+        }}
+      >
+        <span className={`truncate ${actual ? "" : "text-gray-400"}`}>{actual?.label ?? placeholder}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-150 ${abierto ? "rotate-180" : ""}`} aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {abierto && (
+        <ul role="listbox" aria-labelledby={id}
+          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+          {opciones.map((o, i) => (
+            <li key={o.value || "__vacio"} role="option" aria-selected={o.value === value}>
+              <button
+                type="button"
+                className={`w-full px-3 py-2 text-left text-sm ${
+                  o.value === value ? "font-medium text-primary" : "text-gray-700"
+                } ${i === idx ? "bg-primary/10" : "hover:bg-gray-50"}`}
+                onMouseDown={e => { e.preventDefault(); elegir(o.value); }}
+                onMouseEnter={() => setIdx(i)}
+              >
+                {o.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function Spinner() {
   return (
@@ -20,7 +96,7 @@ export function OkMsg({ msg }: { msg: string | null }) {
 
 export function EstadoBadge({ estado }: { estado: string }) {
   const map: Record<string, string> = {
-    CONFIRMADA: "badge-verde", FINALIZADA: "badge-gris", CANCELADA: "badge-rojo",
+    CONFIRMADA: "badge-verde", EN_CURSO: "badge-azul", FINALIZADA: "badge-gris", CANCELADA: "badge-rojo",
     PENDIENTE: "badge-amarillo", APROBADA: "badge-verde", RECHAZADA: "badge-rojo",
     SIN_REEMPLAZO: "badge-amarillo", PENDIENTE_RESPUESTA_DOCENTE: "badge-amarillo",
     RESUELTA: "badge-verde", PROGRAMADO: "badge-gris", ABIERTO: "badge-verde",
@@ -46,6 +122,16 @@ export function Estrellas({ valor, onChange, tamaño = "text-3xl" }: { valor: nu
           ★
         </button>
       ))}
+    </div>
+  );
+}
+
+export function IconoExito({ tamaño = "h-16 w-16" }: { tamaño?: string }) {
+  return (
+    <div className={`mx-auto flex items-center justify-center rounded-2xl bg-primary/10 ${tamaño}`} aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-1/2 w-1/2 text-primary">
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
     </div>
   );
 }

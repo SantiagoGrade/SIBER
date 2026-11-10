@@ -10,12 +10,15 @@ import { prisma } from "../repositories/prisma";
  * - qr_envio_minutos: minutos tras el inicio en que se envía el QR al formador
  *   (30); el registro queda habilitado desde ese mismo envío. El envío se
  *   reintenta hasta que la ventana de registro cierre.
+ * - recordatorio_envio_minutos: minutos desde las 00:00 (Bogotá) a partir de
+ *   los cuales el job envía los recordatorios del día siguiente (720 = 12:00).
  */
 const DEFAULTS: Record<string, unknown> = {
   anticipacion_minima_dias: 2,
   cancelacion_min_horas: 2,
   asistencia_cierre_minutos: 60,
   qr_envio_minutos: 30,
+  recordatorio_envio_minutos: 720,
 };
 
 const cache = new Map<string, { valor: unknown; ts: number }>();

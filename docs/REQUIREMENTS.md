@@ -11,10 +11,10 @@ SUPER_ADMIN, ADMIN, FORMADOR (login) · DOCENTE (público, sin login) · ESTUDIA
 - Reasignaciones por calamidad: solicitud, reemplazos ordenados, aprobación/rechazo admin, propuesta de fecha con aceptación/rechazo del docente por enlace seguro, QR reprogramado.
 - Cancelación docente (≤2 h antes, token de un solo uso, POST) y administrativa con motivo.
 - **Asistencia + evaluación por QR:** envío automático del QR al formador a los **30 min exactos** del inicio (persistente, anti-duplicado, reintentos SMTP, omite canceladas, destinatario = formador vigente, incidencia si ya terminó); formulario público móvil con identificación + encuesta 1–5 + observaciones; dedup por documento; ventana configurable; registro de intentos inválidos.
-- Notificaciones: outbox persistente con dedup, reintentos y backoff para los 12 eventos del prompt + QR.
+- Notificaciones: outbox persistente con dedup, reintentos y backoff para 15 tipos de correo (eventos del prompt + QR + recordatorios). Recordatorios automáticos el día anterior a las 12:00 Bogotá, agrupados por docente y por formador, idempotentes.
 - Dashboards: admin (reservas, carga, cursos, satisfacción global/por curso/por formador, evolución, distribución, comentarios, pendientes) y formador (ocupación semanal, impartidas, asistentes, evolución, comparación de cursos, comentarios). Filtros fecha/curso/formador/facultad/mes/semestre/año.
 - Exportación Excel: reservas, estadísticas (resumen/por curso/por formador/comentarios), asistencia.
 - Seguridad completa (ver SECURITY.md): Argon2id, cookies HttpOnly, rate limit, Helmet, Zod, anti-enumeración, tokens hasheados.
 
 ## Verificación
-94/94 pruebas (ver TESTING.md), `tsc --noEmit` limpio en backend y frontend, build de producción OK.
+114/114 pruebas (ver TESTING.md), `tsc --noEmit` limpio en backend y frontend, build de producción OK.

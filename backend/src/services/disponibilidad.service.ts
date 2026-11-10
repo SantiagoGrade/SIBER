@@ -10,7 +10,7 @@ type Db = typeof prisma | Tx;
 
 /**
  * Franjas de disponibilidad efectiva de un formador en [desde, hasta):
- * disponibilidad semanal expandida − excepciones − reservas CONFIRMADAS/FINALIZADAS.
+ * disponibilidad semanal expandida − excepciones − reservas CONFIRMADAS/EN_CURSO/FINALIZADAS.
  */
 export async function franjasEfectivas(
   db: Db,
@@ -27,7 +27,7 @@ export async function franjasEfectivas(
     db.reserva.findMany({
       where: {
         formadorId,
-        estado: { in: ["CONFIRMADA", "FINALIZADA"] },
+        estado: { in: ["CONFIRMADA", "EN_CURSO", "FINALIZADA"] },
         iniciaAt: { lt: hasta.toJSDate() },
         terminaAt: { gt: desde.toJSDate() },
         ...(excluirReservaId ? { id: { not: excluirReservaId } } : {}),
@@ -64,7 +64,7 @@ export interface CargaSemanal {
 /**
  * Carga semanal de un formador para la semana (lunes-domingo) que contiene `fecha`.
  * disponibles = franjas semanales − excepciones (solo hasta el fin de semana).
- * ocupadas = solape de reservas confirmadas/finalizadas con la disponibilidad efectiva.
+ * ocupadas = solape de reservas confirmadas/en curso/finalizadas con la disponibilidad efectiva.
  */
 export async function cargaSemanal(db: Db, formadorId: string, fecha: DateTime): Promise<CargaSemanal> {
   const ini = inicioSemana(fecha);
@@ -77,7 +77,7 @@ export async function cargaSemanal(db: Db, formadorId: string, fecha: DateTime):
     db.reserva.findMany({
       where: {
         formadorId,
-        estado: { in: ["CONFIRMADA", "FINALIZADA"] },
+        estado: { in: ["CONFIRMADA", "EN_CURSO", "FINALIZADA"] },
         iniciaAt: { lt: fin.toJSDate() },
         terminaAt: { gt: ini.toJSDate() },
       },
@@ -123,7 +123,7 @@ export async function franjasUnion(
 }
 
 /**
- * Unión de los intervalos ocupados por reservas CONFIRMADAS/FINALIZADAS
+ * Unión de los intervalos ocupados por reservas CONFIRMADAS/EN_CURSO/FINALIZADAS
  * de varios formadores (vista pública: solo instantes, sin identidades).
  */
 export async function reservasUnion(
@@ -133,7 +133,7 @@ export async function reservasUnion(
   const reservas = await db.reserva.findMany({
     where: {
       formadorId: { in: formadorIds },
-      estado: { in: ["CONFIRMADA", "FINALIZADA"] },
+      estado: { in: ["CONFIRMADA", "EN_CURSO", "FINALIZADA"] },
       iniciaAt: { lt: hasta.toJSDate() },
       terminaAt: { gt: desde.toJSDate() },
     },

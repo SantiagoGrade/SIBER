@@ -81,13 +81,13 @@ describe("Seguridad y autorización", () => {
     expect(r1.body.error).toBe(r2.body.error); // mismo mensaje (anti-enumeración)
   });
 
-  it("recuperación de contraseña no revela si el correo existe", async () => {
+  it("recuperación de contraseña informa si el correo no está registrado", async () => {
     await crearCuenta({ usuario: "u1", correo: "u1@t.co", rol: "ADMIN" });
     const r1 = await request(app).post("/api/v1/auth/recuperar").send({ correo: "u1@t.co" });
     const r2 = await request(app).post("/api/v1/auth/recuperar").send({ correo: "nadie@t.co" });
     expect(r1.status).toBe(200);
-    expect(r2.status).toBe(200);
-    expect(r1.body).toEqual(r2.body);
+    expect(r2.status).toBe(404);
+    expect(r2.body.error).toMatch(/no existe una cuenta/i);
   });
 
   it("entradas maliciosas en validación son rechazadas", async () => {

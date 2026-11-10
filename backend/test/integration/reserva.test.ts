@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { resetDb, prisma, crearCurso, crearFormador, crearReservaDirecta, SEMANA_COMPLETA, proximoDia } from "./helpers";
-import { crearReserva } from "../../src/services/reserva.service";
+import {
+  crearReserva, iniciarVigentes, finalizarVencidas,
+  sincronizarEstadosReservas, cancelarComoAdmin,
+} from "../../src/services/reserva.service";
+import { solicitarReasignacion } from "../../src/services/reasignacion.service";
 import { DateTime } from "luxon";
 import { ZONA } from "../../src/config/env";
 
@@ -170,6 +174,76 @@ describe("Reservas", () => {
         docenteNombre: "D", docenteCorreo: "d@t.co",
         iniciaAt: inicio.plus({ minutes: 30 }).toJSDate(),
         terminaAt: fin.plus({ minutes: 30 }).toJSDate(),
+        estado: "CONFIRMADA",
+      },
+    })).rejects.toThrow();
+  });
+});
+
+describe("Ciclo de vida de estados", () => {
+  it("CONFIRMADA cuya hora de inicio llegó pasa a EN_CURSO (idempotente)", async () => {
+    const { curso, f } = await escenario();
+    const ahora = DateTime.now().setZone(ZONA);
+    const r = await crearReservaDirecta({
+      cursoId: curso.id, formadorId: f.formadorId,
+      inicio: ahora.minus({ minutes: 10 }), fin: ahora.plus({ minutes: 50 }),
+    });
+    expect(await iniciarVigentes()).toBe(1);
+    expect((await prisma.reserva.findUniqueOrThrow({ where: { id: r.id } })).estado).toBe("EN_CURSO");
+    expect(await prisma.historialReserva.count({ where: { reservaId: r.id, evento: "EN_CURSO" } })).toBe(1);
+    expect(await iniciarVigentes()).toBe(0);
+  });
+
+  it("una reserva futura no cambia de estado al sincronizar", async () => {
+    const { curso, f } = await escenario();
+    const { inicio, fin } = proximoDia(2, 14, 60);
+    const r = await crearReservaDirecta({ cursoId: curso.id, formadorId: f.formadorId, inicio, fin });
+    await sincronizarEstadosReservas();
+    expect((await prisma.reserva.findUniqueOrThrow({ where: { id: r.id } })).estado).toBe("CONFIRMADA");
+  });
+
+  it("EN_CURSO finaliza al pasar terminaAt", async () => {
+    const { curso, f } = await escenario();
+    const ahora = DateTime.now().setZone(ZONA);
+    const r = await crearReservaDirecta({
+      cursoId: curso.id, formadorId: f.formadorId,
+      inicio: ahora.minus({ hours: 2 }), fin: ahora.minus({ minutes: 5 }),
+      estado: "EN_CURSO",
+    });
+    expect(await finalizarVencidas()).toBe(1);
+    const rr = await prisma.reserva.findUniqueOrThrow({ where: { id: r.id } });
+    expect(rr.estado).toBe("FINALIZADA");
+    expect(rr.finalizadaAt).not.toBeNull();
+    expect(await prisma.historialReserva.count({ where: { reservaId: r.id, evento: "FINALIZADA" } })).toBe(1);
+  });
+
+  it("una reserva EN_CURSO no se puede cancelar ni reasignar", async () => {
+    const { curso, f } = await escenario();
+    const ahora = DateTime.now().setZone(ZONA);
+    const r = await crearReservaDirecta({
+      cursoId: curso.id, formadorId: f.formadorId,
+      inicio: ahora.minus({ minutes: 10 }), fin: ahora.plus({ minutes: 50 }),
+      estado: "EN_CURSO",
+    });
+    await expect(cancelarComoAdmin(r.id, "motivo válido", "actor")).rejects.toMatchObject({ status: 409 });
+    await expect(
+      solicitarReasignacion(f.formadorId, r.id, "motivo válido", undefined, "actor")
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("una reserva EN_CURSO bloquea el solape a nivel de base de datos", async () => {
+    const { curso, f } = await escenario();
+    const ahora = DateTime.now().setZone(ZONA);
+    await crearReservaDirecta({
+      cursoId: curso.id, formadorId: f.formadorId,
+      inicio: ahora.minus({ minutes: 30 }), fin: ahora.plus({ minutes: 30 }),
+      estado: "EN_CURSO",
+    });
+    await expect(prisma.reserva.create({
+      data: {
+        codigo: "X-2", cursoId: curso.id, formadorId: f.formadorId,
+        docenteNombre: "D", docenteCorreo: "d@t.co",
+        iniciaAt: ahora.toJSDate(), terminaAt: ahora.plus({ hours: 1 }).toJSDate(),
         estado: "CONFIRMADA",
       },
     })).rejects.toThrow();

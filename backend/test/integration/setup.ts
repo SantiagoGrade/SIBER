@@ -16,6 +16,7 @@ process.env.PUBLIC_APP_URL = "http://localhost:3999";
 process.env.OUTBOX_POLL_MS = "100";
 process.env.QR_JOB_POLL_MS = "100";
 process.env.FINALIZA_JOB_POLL_MS = "100";
+process.env.RECORDATORIO_JOB_POLL_MS = "100";
 process.env.CORS_ORIGIN = "http://localhost:3999";
 // SMTP: el test lo configura explícitamente por escenario (puerto 3525)
 process.env.SMTP_HOST = "localhost";
