@@ -40,9 +40,9 @@ const NOMBRE_ROL = { SUPER_ADMIN: "Super administrador", ADMIN: "Administrador",
 function General() {
   return (
     <>
-      <Seccion titulo="¿Qué es SIFOIN?">
+      <Seccion titulo="¿Qué es SIBER?">
         <p>
-          SIFOIN gestiona las reservas de formaciones institucionales de la Biblioteca. Un docente
+          SIBER gestiona las reservas de formaciones institucionales de la Biblioteca. Un docente
           solicita una formación desde el formulario público y el sistema <strong>asigna
           automáticamente un formador</strong>: elige al formador habilitado para ese curso, con
           disponibilidad que cubra todo el horario y con la <strong>menor ocupación semanal</strong>.
@@ -272,7 +272,7 @@ export function ManualUsuario({ abierto, onClose, rol }: Props) {
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
             <h2 className="text-lg font-bold text-primary">Manual de usuario</h2>
-            <p className="text-xs text-gray-500">Guía de SIFOIN para el rol {NOMBRE_ROL[rol]}</p>
+            <p className="text-xs text-gray-500">Guía de SIBER para el rol {NOMBRE_ROL[rol]}</p>
           </div>
           <button
             onClick={onClose} aria-label="Cerrar manual"

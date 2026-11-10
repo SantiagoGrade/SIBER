@@ -5,7 +5,7 @@ import { prisma } from "./repositories/prisma";
 
 const app = crearApp();
 const server = app.listen(env.port, () => {
-  console.log(`SIFOIN backend escuchando en http://localhost:${env.port}`);
+  console.log(`SIBER backend escuchando en http://localhost:${env.port}`);
   iniciarJobs();
 });
 

@@ -60,7 +60,7 @@ describe("Job de envío del QR (inicio + 30 min, persistente)", () => {
     expect(qr.estado).toBe("ABIERTO");
     // El correo contiene el asunto institucional y el QR adjunto
     const mensaje = smtp.mensajesPara("formador1@t.co")[0];
-    expect(mensaje.datos).toContain("SIFOIN");
+    expect(mensaje.datos).toContain("SIBER");
     expect(mensaje.datos).toContain("asistencia");
   });
 

@@ -30,7 +30,7 @@ function Header({ items }: { items: NavItem[] }) {
           <img src="/logo.jpeg" alt="Colegio Mayor de Antioquia" className="h-7 shrink-0 object-contain sm:h-9" />
           <div className="flex flex-col leading-tight">
             <span className="whitespace-nowrap text-sm font-bold text-primary sm:text-base">Colegio Mayor de Antioquia</span>
-            <span className="whitespace-nowrap text-xs font-medium text-gray-500">SIFOIN · Formación Institucional</span>
+            <span className="whitespace-nowrap text-xs font-medium text-gray-500">SIBER · Reservas</span>
           </div>
         </div>
 
@@ -172,7 +172,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <img src="/logo.jpeg" alt="Colegio Mayor de Antioquia" className="h-7 shrink-0 object-contain sm:h-9" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-bold text-primary sm:text-base">Colegio Mayor de Antioquia</span>
-            <span className="text-xs font-medium text-gray-500">SIFOIN · Formación Institucional — Biblioteca</span>
+            <span className="text-xs font-medium text-gray-500">SIBER · Sistema Bibliotecario de Reservas</span>
           </div>
         </div>
       </header>

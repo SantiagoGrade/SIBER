@@ -139,6 +139,6 @@ export const exportarAsistenciaMia = ah(async (req: Request, res: Response) => {
   await verificarPropiedad(req);
   const buffer = await exportar("asistencia", {}, req.params.id);
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename="sifoin-asistencia-${new Date().toISOString().slice(0, 10)}.xlsx"`);
+  res.setHeader("Content-Disposition", `attachment; filename="siber-asistencia-${new Date().toISOString().slice(0, 10)}.xlsx"`);
   res.send(Buffer.from(buffer as ArrayBuffer));
 });

@@ -71,74 +71,74 @@ export function construirCorreo(tipo: TipoNotificacion, d: DatosCorreo): {
 
   switch (tipo) {
     case "CONFIRMACION_RESERVA":
-      asunto = `SIFOIN — Confirmación de reserva ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Confirmación de reserva ${d.codigoReserva ?? ""}`;
       titulo = "Tu solicitud de formación fue confirmada";
       cuerpo = saludo + `<p>La reserva de tu formación quedó registrada:</p>` + datosReserva(d)
         + `<p>Si necesitas cancelarla, puedes hacerlo hasta 2 horas antes del inicio:</p>`
         + (d.enlaceAccion ? enlace("Cancelar mi reserva", d.enlaceAccion) : "");
       break;
     case "NUEVA_FORMACION_ASIGNADA":
-      asunto = `SIFOIN — Nueva formación asignada: ${d.curso ?? ""}`;
+      asunto = `SIBER — Nueva formación asignada: ${d.curso ?? ""}`;
       titulo = "Tienes una nueva formación asignada";
       cuerpo = saludo + `<p>Se te asignó una formación:</p>` + datosReserva(d);
       break;
     case "CANCELACION_RESERVA":
-      asunto = `SIFOIN — Reserva cancelada ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Reserva cancelada ${d.codigoReserva ?? ""}`;
       titulo = "Una reserva fue cancelada";
       cuerpo = saludo + `<p>La siguiente reserva fue cancelada:</p>` + datosReserva(d)
         + fila("Motivo", d.motivo);
       break;
     case "SOLICITUD_REASIGNACION_ADMIN":
-      asunto = `SIFOIN — Solicitud de reasignación pendiente`;
+      asunto = `SIBER — Solicitud de reasignación pendiente`;
       titulo = "Hay una solicitud de reasignación por calamidad";
       cuerpo = saludo + `<p>El formador <strong>${d.formador ?? ""}</strong> solicitó reasignar:</p>`
         + datosReserva(d) + fila("Motivo", d.motivo) + fila("Observación", d.observacion);
       break;
     case "REASIGNACION_APROBADA":
-      asunto = `SIFOIN — Reasignación aprobada`;
+      asunto = `SIBER — Reasignación aprobada`;
       titulo = "La reasignación fue aprobada";
       cuerpo = saludo + `<p>La reasignación de la siguiente formación fue aprobada:</p>` + datosReserva(d);
       break;
     case "REASIGNACION_RECHAZADA":
-      asunto = `SIFOIN — Reasignación rechazada`;
+      asunto = `SIBER — Reasignación rechazada`;
       titulo = "La reasignación fue rechazada";
       cuerpo = saludo + datosReserva(d) + fila("Motivo", d.motivo);
       break;
     case "CAMBIO_FORMADOR":
-      asunto = `SIFOIN — Cambio de formador ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Cambio de formador ${d.codigoReserva ?? ""}`;
       titulo = "Cambio de formador en una formación";
       cuerpo = saludo + `<p>La formación ahora será impartida por otro formador:</p>` + datosReserva(d);
       break;
     case "PROPUESTA_NUEVA_FECHA":
-      asunto = `SIFOIN — Propuesta de nueva fecha ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Propuesta de nueva fecha ${d.codigoReserva ?? ""}`;
       titulo = "Te proponemos una nueva fecha para tu formación";
       cuerpo = saludo + `<p>No fue posible mantener la fecha original. Te proponemos:</p>`
         + datosReserva(d) + `<p>Puedes aceptar o rechazar la propuesta:</p>`
         + (d.enlaceAccion ? enlace("Responder a la propuesta", d.enlaceAccion) : "");
       break;
     case "ACEPTACION_NUEVA_FECHA":
-      asunto = `SIFOIN — Propuesta aceptada ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Propuesta aceptada ${d.codigoReserva ?? ""}`;
       titulo = "El docente aceptó la nueva fecha";
       cuerpo = saludo + datosReserva(d);
       break;
     case "RECHAZO_PROPUESTA":
-      asunto = `SIFOIN — Propuesta rechazada ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Propuesta rechazada ${d.codigoReserva ?? ""}`;
       titulo = "El docente rechazó la propuesta de fecha";
       cuerpo = saludo + datosReserva(d);
       break;
     case "CONFIRMACION_FECHA_MODIFICADA":
-      asunto = `SIFOIN — Fecha modificada ${d.codigoReserva ?? ""}`;
+      asunto = `SIBER — Fecha modificada ${d.codigoReserva ?? ""}`;
       titulo = "Tu formación tiene una nueva fecha confirmada";
       cuerpo = saludo + datosReserva(d);
       break;
     case "RECUPERACION_PASSWORD":
-      asunto = `SIFOIN — Recuperación de contraseña`;
+      asunto = `SIBER — Recuperación de contraseña`;
       titulo = "Recuperación de contraseña";
       cuerpo = saludo + `<p>Usa el siguiente enlace para restablecer tu contraseña. Caduca en 1 hora.</p>`
         + (d.enlaceAccion ? enlace("Restablecer contraseña", d.enlaceAccion) : "");
       break;
     case "QR_ASISTENCIA":
-      asunto = `SIFOIN — Código QR de asistencia para tu formación`;
+      asunto = `SIBER — Código QR de asistencia para tu formación`;
       titulo = "Código QR de asistencia de tu formación";
       cuerpo = saludo
         + `<p>Ya puedes compartir con los estudiantes el código QR de asistencia y evaluación de tu formación:</p>`
@@ -156,7 +156,7 @@ export function construirCorreo(tipo: TipoNotificacion, d: DatosCorreo): {
       break;
     case "RECORDATORIO_DOCENTE": {
       const items = d.items ?? [];
-      asunto = `SIFOIN — Recordatorio: tu formación de mañana`;
+      asunto = `SIBER — Recordatorio: tu formación de mañana`;
       titulo = "Recordatorio de formación";
       cuerpo = saludo
         + `<p>Te recordamos que mañana, <strong>${d.fecha ?? ""}</strong>, tienes programada${items.length > 1 ? "s" : ""} la${items.length > 1 ? "s" : ""} siguiente${items.length > 1 ? "s" : ""} formación${items.length > 1 ? "es" : ""}:</p>`
@@ -166,7 +166,7 @@ export function construirCorreo(tipo: TipoNotificacion, d: DatosCorreo): {
     }
     case "RECORDATORIO_FORMADOR": {
       const items = d.items ?? [];
-      asunto = `SIFOIN — Recordatorio: formaciones de mañana`;
+      asunto = `SIBER — Recordatorio: formaciones de mañana`;
       titulo = "Recordatorio de formaciones";
       cuerpo = saludo
         + `<p>Te recordamos que mañana, <strong>${d.fecha ?? ""}</strong>, impartirás la${items.length > 1 ? "s" : ""} siguiente${items.length > 1 ? "s" : ""} formación${items.length > 1 ? "es" : ""}:</p>`

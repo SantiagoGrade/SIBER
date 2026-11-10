@@ -1,4 +1,4 @@
-# AGENTS.md — SIFOIN
+# AGENTS.md — SIBER
 
 Guía técnica persistente para agentes y desarrolladores.
 

@@ -11,7 +11,7 @@ docker compose up -d --build
 docker compose exec backend npx tsx prisma/seed.ts
 ```
 
-- `db` persiste en volumen `sifoin-pgdata` (`postgres:16-alpine`).
+- `db` persiste en volumen `siber-pgdata` (`postgres:16-alpine`).
 - `backend`: `migrate deploy` automático al arrancar (ver `backend/Dockerfile`).
 - `frontend`: nginx :3001.
 

@@ -262,7 +262,7 @@ export const exportarCtrl = ah(async (req: Request, res: Response) => {
   if (!["reservas", "estadisticas", "asistencia"].includes(tipo)) throw badRequest("Tipo inválido");
   const buffer = await exportar(tipo, req.query as unknown as FiltroEstadisticas, req.query.reservaId as string | undefined);
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename="sifoin-${tipo}-${new Date().toISOString().slice(0, 10)}.xlsx"`);
+  res.setHeader("Content-Disposition", `attachment; filename="siber-${tipo}-${new Date().toISOString().slice(0, 10)}.xlsx"`);
   res.send(Buffer.from(buffer as ArrayBuffer));
 });
 

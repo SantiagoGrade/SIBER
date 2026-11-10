@@ -85,4 +85,4 @@ formador.get("/reservas/:id/asistentes/exportar", frm.exportarAsistenciaMia);
 router.use("/formador", formador);
 
 // Salud
-router.get("/health", (_req, res) => res.json({ ok: true, servicio: "sifoin" }));
+router.get("/health", (_req, res) => res.json({ ok: true, servicio: "siber" }));

@@ -26,7 +26,7 @@ export default function Login() {
   return (
     <AuthLayout>
       <form onSubmit={entrar} className="card space-y-4 p-6 shadow-2xl sm:p-8">
-        <AuthMarca titulo="SIFOIN" subtitulo="Sistema de Formación Institucional" />
+        <AuthMarca titulo="SIBER" subtitulo="Sistema Bibliotecario de Reservas" />
         <ErrorMsg msg={error} />
         <div>
           <label className="label-base" htmlFor="usuario">Correo electrónico o usuario</label>

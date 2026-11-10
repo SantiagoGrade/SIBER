@@ -22,7 +22,7 @@ declare global {
   }
 }
 
-export const COOKIE_SESION = "sifoin_sesion";
+export const COOKIE_SESION = "siber_sesion";
 
 export function firmarSesion(payload: Omit<SesionUsuario, "formadorId"> & { formadorId?: string }): string {
   return jwt.sign(payload, env.jwtSecret, { expiresIn: `${env.sessionTtlHours}h` });

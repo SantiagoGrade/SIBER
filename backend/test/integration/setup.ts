@@ -10,8 +10,8 @@ import path from "path";
 
 process.env.DATABASE_URL =
   process.env.DATABASE_URL_TEST ??
-  "postgresql://sifoin:sifoin_test_password@localhost:5434/sifoin_test?schema=public";
-process.env.JWT_SECRET = "test-secret-sifoin-0123456789abcdef0123456789abcdef";
+  "postgresql://siber:siber_test_password@localhost:5434/siber_test?schema=public";
+process.env.JWT_SECRET = "test-secret-siber-0123456789abcdef0123456789abcdef";
 process.env.PUBLIC_APP_URL = "http://localhost:3999";
 process.env.OUTBOX_POLL_MS = "100";
 process.env.QR_JOB_POLL_MS = "100";
@@ -22,7 +22,7 @@ process.env.CORS_ORIGIN = "http://localhost:3999";
 process.env.SMTP_HOST = "localhost";
 process.env.SMTP_PORT = "3525";
 process.env.SMTP_SECURE = "false";
-process.env.SMTP_FROM = "SIFOIN Test <test@localhost>";
+process.env.SMTP_FROM = "SIBER Test <test@localhost>";
 process.env.SMTP_USER = "";
 process.env.SMTP_PASS = "";
 

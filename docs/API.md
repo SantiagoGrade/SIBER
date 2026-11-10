@@ -1,6 +1,6 @@
 # API REST — `/api/v1`
 
-Auth: cookie HttpOnly `sifoin_sesion` (JWT 8 h). Errores: `{ error, code, detalles? }`.
+Auth: cookie HttpOnly `siber_sesion` (JWT 8 h). Errores: `{ error, code, detalles? }`.
 
 ## Público (sin login, rate limited)
 | Método | Ruta | Descripción |

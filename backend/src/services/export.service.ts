@@ -73,7 +73,7 @@ function filaDatos(row: ExcelJS.Row, nCols: number, impar: boolean) {
 
 function nuevoLibro(): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "SIFOIN · Colmayor";
+  wb.creator = "SIBER · Colmayor";
   wb.created = new Date();
   return wb;
 }
@@ -125,7 +125,7 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
     { key: "finalizada", width: 17 },
   ];
   const nCols = ws.columns.length;
-  let fila = tituloYSubtitulo(ws, "SIFOIN · Reservas de formaciones", await describirFiltros(f), nCols);
+  let fila = tituloYSubtitulo(ws, "SIBER · Reservas de formaciones", await describirFiltros(f), nCols);
   ws.getRow(fila).values = [
     "Código", "Estado", "Fecha", "Inicio", "Fin", "Curso", "Formador", "Docente",
     "Correo docente", "Teléfono docente", "Aula", "Facultad", "Asistentes",
@@ -204,7 +204,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
   // Resumen (etiqueta/valor, sin autofiltro)
   const res = wb.addWorksheet("Resumen");
   res.columns = [{ width: 44 }, { width: 22 }];
-  tituloYSubtitulo(res, "SIFOIN · Estadísticas de formaciones", subtitulo, 2);
+  tituloYSubtitulo(res, "SIBER · Estadísticas de formaciones", subtitulo, 2);
   const filas: [string, string | number | null][] = [
     ["Formaciones solicitadas", stats.reservas.solicitadas],
     ["Confirmadas", stats.reservas.confirmadas],
@@ -230,7 +230,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
     imparRes = !imparRes;
   }
 
-  hojaTabla(wb, "Por curso", "SIFOIN · Satisfacción por curso", subtitulo,
+  hojaTabla(wb, "Por curso", "SIBER · Satisfacción por curso", subtitulo,
     [36, 12, 12, 12],
     ["Curso", "Promedio", "Respuestas", "Reservas"],
     stats.satisfaccion.porCurso.map(c => [
@@ -239,7 +239,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
     ]),
   );
 
-  hojaTabla(wb, "Por formador", "SIFOIN · Satisfacción y carga por formador", subtitulo,
+  hojaTabla(wb, "Por formador", "SIBER · Satisfacción y carga por formador", subtitulo,
     [36, 12, 12, 12, 12],
     ["Formador", "Promedio", "Respuestas", "Horas", "Reservas"],
     stats.satisfaccion.porFormador.map(fm => {
@@ -250,7 +250,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
 
   const evolPorMes = new Map(stats.satisfaccion.evolucion.map(e => [e.mes, e]));
   const meses = [...new Set([...stats.reservasPorMes.map(r => r.mes), ...stats.satisfaccion.evolucion.map(e => e.mes)])].sort();
-  hojaTabla(wb, "Por mes", "SIFOIN · Reservas y satisfacción por mes", subtitulo,
+  hojaTabla(wb, "Por mes", "SIBER · Reservas y satisfacción por mes", subtitulo,
     [14, 12, 14, 14],
     ["Mes", "Reservas", "Evaluaciones", "Calif. prom."],
     meses.map(m => {
@@ -260,7 +260,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
   );
 
   const totalEval = stats.satisfaccion.totalEvaluaciones || 1;
-  hojaTabla(wb, "Distribución", "SIFOIN · Distribución de calificaciones", subtitulo,
+  hojaTabla(wb, "Distribución", "SIBER · Distribución de calificaciones", subtitulo,
     [14, 12, 14],
     ["Estrellas", "Cantidad", "% del total"],
     stats.satisfaccion.distribucion.map(d => [
@@ -269,7 +269,7 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
     ]),
   );
 
-  const com = hojaTabla(wb, "Observaciones", "SIFOIN · Observaciones de los asistentes", subtitulo,
+  const com = hojaTabla(wb, "Observaciones", "SIBER · Observaciones de los asistentes", subtitulo,
     [12, 30, 26, 26, 16, 12, 70],
     ["Código", "Curso", "Formador", "Asistente", "Fecha", "Calificación", "Observaciones"],
     stats.satisfaccion.comentarios.map(c => [
@@ -302,7 +302,7 @@ async function workbookAsistencia(reservaId: string): Promise<ExcelJS.Buffer> {
   const ini = aBogota(reserva.iniciaAt);
   tituloYSubtitulo(
     ws,
-    `SIFOIN · Asistencia — ${reserva.curso.nombre}`,
+    `SIBER · Asistencia — ${reserva.curso.nombre}`,
     `Generado el ${aBogota(new Date()).toFormat("dd/MM/yyyy HH:mm")}`,
     nCols,
   );
