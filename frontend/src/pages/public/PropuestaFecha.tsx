@@ -31,14 +31,14 @@ export default function PropuestaFecha() {
   return (
     <PublicLayout>
       <div className="card mt-6">
-        <h1 className="text-lg font-bold text-primary">Propuesta de nueva fecha</h1>
+        <h1 className="text-lg font-bold text-primary dark:text-primary-soft">Propuesta de nueva fecha</h1>
         <ErrorMsg msg={error} />
         {!previa && !error && <Spinner />}
         {respuesta === "aceptada" && <OkMsg msg="Aceptaste la nueva fecha. Tu formación quedó reprogramada y recibirás un correo de confirmación." />}
         {respuesta === "rechazada" && <OkMsg msg="Rechazaste la propuesta. La Biblioteca revisará otras alternativas y te contactará." />}
         {previa && !respuesta && (
           <div className="mt-4 space-y-4">
-            <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
+            <div className="bg-gray-50 dark:bg-night-800 rounded-xl p-4 text-sm space-y-1">
               <div><strong>Curso:</strong> {previa.curso}</div>
               <div><strong>Reserva:</strong> {previa.codigoReserva}</div>
               <div><strong>Nueva fecha propuesta:</strong> {previa.fechaPropuesta} · {previa.horaInicio}–{previa.horaFin}</div>
@@ -49,7 +49,7 @@ export default function PropuestaFecha() {
                 <button className="btn-secondary flex-1" disabled={enviando} onClick={() => responder(false)}>Rechazar</button>
               </div>
             ) : (
-              <p className="text-sm text-gray-600">Esta propuesta ya fue respondida o expiró.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Esta propuesta ya fue respondida o expiró.</p>
             )}
           </div>
         )}

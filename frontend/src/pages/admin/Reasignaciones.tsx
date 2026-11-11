@@ -99,24 +99,24 @@ export default function Reasignaciones() {
           <div className="card lg:col-span-2 space-y-2 max-h-[70vh] overflow-auto">
             {lista.map(s => (
               <button key={s.id} onClick={() => ver(s)}
-                className={`w-full text-left rounded-xl border p-3 ${sel?.id === s.id ? "border-primary bg-primary/10" : "border-gray-200"}`}>
+                className={`w-full text-left rounded-xl border p-3 ${sel?.id === s.id ? "border-primary dark:border-primary-soft/50 bg-primary/10 dark:bg-primary/20" : "border-gray-200 dark:border-night-700"}`}>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">{s.reserva.codigo} · {s.reserva.curso}</span>
                   <EstadoBadge estado={s.estado} />
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {s.solicitante} · {fmtFechaHora(s.reserva.iniciaAt)} · {s.motivo}
                 </div>
               </button>
             ))}
-            {!lista.length && <p className="text-sm text-gray-500">No hay solicitudes.</p>}
+            {!lista.length && <p className="text-sm text-gray-500 dark:text-gray-400">No hay solicitudes.</p>}
           </div>
 
           <div className="lg:col-span-3 space-y-4">
             {sel ? (
               <>
                 <div className="card">
-                  <h3 className="font-semibold text-primary">{sel.reserva.codigo} — {sel.reserva.curso}</h3>
+                  <h3 className="font-semibold text-primary dark:text-primary-soft">{sel.reserva.codigo} — {sel.reserva.curso}</h3>
                   <div className="text-sm mt-1">
                     {fmtFecha(sel.reserva.iniciaAt)} {fmtHora(sel.reserva.iniciaAt)}–{fmtHora(sel.reserva.terminaAt)} ·
                     Docente: {sel.reserva.docenteNombre}
@@ -126,57 +126,57 @@ export default function Reasignaciones() {
 
                 {!accionable && (
                   <div className="card">
-                    <h3 className="font-semibold text-primary mb-2">Estado de la solicitud</h3>
+                    <h3 className="font-semibold text-primary dark:text-primary-soft mb-2">Estado de la solicitud</h3>
                     <EstadoBadge estado={sel.estado} />
                     {sel.estado === "PENDIENTE_RESPUESTA_DOCENTE" && propuestaVigente && (
-                      <p className="text-sm text-gray-600 mt-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                         Esperando respuesta del docente a la propuesta del{" "}
                         {fmtFecha(propuestaVigente.iniciaAt)} {fmtHora(propuestaVigente.iniciaAt)}–{fmtHora(propuestaVigente.terminaAt)}.
                       </p>
                     )}
                     {sel.estado === "APROBADA" && sel.reemplazoSugerido && (
-                      <p className="text-sm text-gray-600 mt-2">Reemplazo asignado: {sel.reemplazoSugerido}.</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Reemplazo asignado: {sel.reemplazoSugerido}.</p>
                     )}
                     {sel.estado === "RESUELTA" && propuestaAceptada && (
-                      <p className="text-sm text-gray-600 mt-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                         El docente aceptó la propuesta del{" "}
                         {fmtFecha(propuestaAceptada.iniciaAt)} {fmtHora(propuestaAceptada.iniciaAt)}–{fmtHora(propuestaAceptada.terminaAt)}.
                       </p>
                     )}
-                    <p className="text-xs text-gray-400 mt-2">La solicitud ya no admite acciones.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">La solicitud ya no admite acciones.</p>
                   </div>
                 )}
 
                 {accionable && (
                   <>
                     <div className="card">
-                      <h3 className="font-semibold text-primary mb-2">Reemplazos elegibles (menor ocupación primero)</h3>
-                      {reemplazos.length === 0 && <p className="text-sm text-gray-500">No hay formadores elegibles en la misma franja.</p>}
+                      <h3 className="font-semibold text-primary dark:text-primary-soft mb-2">Reemplazos elegibles (menor ocupación primero)</h3>
+                      {reemplazos.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No hay formadores elegibles en la misma franja.</p>}
                       {reemplazos.map(r => (
-                        <div key={r.formadorId} className="flex items-center justify-between border-b border-gray-100 py-2 text-sm">
-                          <span>{r.nombre} <span className="text-gray-400">· ocupación {r.ocupacion.toFixed(1)}%</span></span>
+                        <div key={r.formadorId} className="flex items-center justify-between border-b border-gray-100 dark:border-night-800 py-2 text-sm">
+                          <span>{r.nombre} <span className="text-gray-400 dark:text-gray-500">· ocupación {r.ocupacion.toFixed(1)}%</span></span>
                           <button className="btn-primary text-xs" onClick={() => actuar("aprobar", { formadorId: r.formadorId })}>Aprobar</button>
                         </div>
                       ))}
                     </div>
 
                     <div className="card">
-                      <h3 className="font-semibold text-primary mb-2">Proponer nueva fecha al docente</h3>
+                      <h3 className="font-semibold text-primary dark:text-primary-soft mb-2">Proponer nueva fecha al docente</h3>
                       {alternativas.length === 0 ? (
-                        <p className="text-sm text-gray-500">No hay fechas alternativas con formadores disponibles en los próximos 30 días.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No hay fechas alternativas con formadores disponibles en los próximos 30 días.</p>
                       ) : (
                         <div className="grid gap-4 md:grid-cols-2">
-                          <div className="rounded-xl border border-gray-200 p-3">
+                          <div className="rounded-xl border border-gray-200 dark:border-night-700 p-3">
                             <div className="flex items-center justify-between mb-2">
                               <button type="button" className="btn-secondary px-3 py-1" disabled={mesVisible <= mesMin}
                                 onClick={() => setMesVisible(new Date(mesVisible.getFullYear(), mesVisible.getMonth() - 1, 1))}>‹</button>
-                              <div className="font-medium text-primary capitalize">
+                              <div className="font-medium text-primary dark:text-primary-soft capitalize">
                                 {mesVisible.toLocaleDateString("es-CO", { month: "long", year: "numeric" })}
                               </div>
                               <button type="button" className="btn-secondary px-3 py-1" disabled={mesVisible >= mesMax}
                                 onClick={() => setMesVisible(new Date(mesVisible.getFullYear(), mesVisible.getMonth() + 1, 1))}>›</button>
                             </div>
-                            <div className="grid grid-cols-7 text-center text-xs text-gray-500 mb-1">
+                            <div className="grid grid-cols-7 text-center text-xs text-gray-500 dark:text-gray-400 mb-1">
                               {["L", "M", "X", "J", "V", "S", "D"].map(d => <div key={d} className="py-1 font-medium">{d}</div>)}
                             </div>
                             <div className="grid grid-cols-7 gap-1">
@@ -189,19 +189,19 @@ export default function Reasignaciones() {
                                   <button key={key} type="button" disabled={!disp} onClick={() => elegirDia(d)}
                                     className={`aspect-square rounded-lg text-sm transition ${
                                       activo ? "bg-primary text-white font-semibold"
-                                      : disp ? "bg-accent/40 text-primary hover:bg-accent font-medium"
-                                      : "text-gray-300 cursor-not-allowed"}`}>
+                                      : disp ? "bg-accent/40 dark:bg-primary/30 text-primary dark:text-primary-soft hover:bg-accent dark:hover:bg-primary/50 font-medium"
+                                      : "text-gray-300 dark:text-gray-500 cursor-not-allowed"}`}>
                                     {d.getDate()}
                                   </button>
                                 );
                               })}
                             </div>
-                            <p className="text-xs text-gray-400 mt-2">Los días marcados tienen formadores disponibles.</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Los días marcados tienen formadores disponibles.</p>
                           </div>
 
                           <div>
                             {!propuesta.fecha ? (
-                              <p className="text-sm text-gray-500">Elige un día en el calendario para proponer la nueva fecha.</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Elige un día en el calendario para proponer la nueva fecha.</p>
                             ) : (
                               <>
                                 <div className="label-base mb-2 capitalize">
@@ -232,19 +232,19 @@ export default function Reasignaciones() {
                     </div>
 
                     <div className="card">
-                      <h3 className="font-semibold text-primary mb-2">Otras acciones</h3>
+                      <h3 className="font-semibold text-primary dark:text-primary-soft mb-2">Otras acciones</h3>
                       <div className="flex gap-2 items-center flex-wrap">
                         <input className="input-base flex-1 min-w-40" placeholder="Motivo" value={motivo} onChange={e => setMotivo(e.target.value)} />
                         <button className="btn-secondary" onClick={() => actuar("sin-reemplazo")}>Marcar sin reemplazo</button>
                         <button className="btn-secondary" disabled={motivo.length < 3} onClick={() => actuar("rechazar", { motivo })}>Rechazar solicitud</button>
                         <button className="btn-danger" disabled={motivo.length < 3} onClick={cancelarReserva}>Cancelar reserva</button>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">“Rechazar solicitud” descarta la petición y la reserva sigue vigente; “Cancelar reserva” anula la formación y notifica al docente.</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">“Rechazar solicitud” descarta la petición y la reserva sigue vigente; “Cancelar reserva” anula la formación y notifica al docente.</p>
                     </div>
                   </>
                 )}
               </>
-            ) : <div className="card text-sm text-gray-500">Selecciona una solicitud.</div>}
+            ) : <div className="card text-sm text-gray-500 dark:text-gray-400">Selecciona una solicitud.</div>}
           </div>
         </div>
       )}

@@ -5,6 +5,8 @@ export default defineConfig({
     environment: "node",
     testTimeout: 60_000,
     hookTimeout: 120_000,
+    // Serializa suites concurrentes sobre la misma base de pruebas
+    globalSetup: "./test/integration/globalSetup.ts",
     // Las integraciones comparten una sola base de datos de pruebas
     fileParallelism: false,
     sequence: { concurrent: false },

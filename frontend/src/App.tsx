@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { TemaProvider } from "./context/TemaContext";
 import { ReactNode } from "react";
 import { Spinner } from "./components/ui";
 
@@ -41,8 +42,9 @@ function Inicio() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <TemaProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/solicitar" element={<SolicitarFormacion />} />
@@ -67,7 +69,8 @@ export default function App() {
           <Route path="/formador/reasignaciones" element={<Protegida roles={["FORMADOR"]}><ReasignacionesFormador /></Protegida>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </TemaProvider>
   );
 }

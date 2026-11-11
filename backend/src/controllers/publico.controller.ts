@@ -26,9 +26,11 @@ export const facultadesActivas = ah(async (_req: Request, res: Response) => {
   }));
 });
 
-export const programasActivos = ah(async (_req: Request, res: Response) => {
+export const programasActivos = ah(async (req: Request, res: Response) => {
+  const facultadId = req.query.facultadId as string | undefined;
   res.json(await prisma.programaAcademico.findMany({
-    where: { activo: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" },
+    where: { activo: true, ...(facultadId ? { facultadId } : {}) },
+    select: { id: true, nombre: true, facultadId: true }, orderBy: { nombre: "asc" },
   }));
 });
 

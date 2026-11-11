@@ -10,6 +10,15 @@ interface InfoQr { ok: boolean; reservaId?: string; curso?: string; fecha?: stri
 const normalizar = (s: string) =>
   s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
+function Pregunta({ texto, valor, onChange }: { texto: string; valor: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <div className="text-sm text-gray-700 dark:text-gray-300">{texto}</div>
+      <Estrellas valor={valor} onChange={onChange} tamaño="text-2xl" />
+    </div>
+  );
+}
+
 export default function Asistencia() {
   const { token } = useParams<{ token: string }>();
   const [info, setInfo] = useState<InfoQr | null>(null);
@@ -24,7 +33,9 @@ export default function Asistencia() {
 
   const [f, setF] = useState({
     nombreCompleto: "", documento: "", correo: "", programaAcademicoId: "",
-    calificacionGeneral: 0, observaciones: "",
+    contenidoObjetivo: 5, metodologiaAdecuada: 5,
+    dominioTema: 5, coherenciaExposicion: 5,
+    calificacionGeneral: 5, observaciones: "",
   });
 
   const programasFiltrados = useMemo(
@@ -55,6 +66,10 @@ export default function Asistencia() {
         correo: f.correo,
         programaAcademicoId: f.programaAcademicoId,
         evaluacion: {
+          contenidoObjetivo: f.contenidoObjetivo,
+          metodologiaAdecuada: f.metodologiaAdecuada,
+          dominioTema: f.dominioTema,
+          coherenciaExposicion: f.coherenciaExposicion,
           calificacionGeneral: f.calificacionGeneral,
           observaciones: f.observaciones || undefined,
         },
@@ -77,22 +92,21 @@ export default function Asistencia() {
       <PublicLayout>
         <div className="card mt-6 text-center py-10">
           <IconoExito />
-          <h1 className="mt-4 text-xl font-bold text-primary">¡Gracias por participar!</h1>
-          <p className="mt-2 text-sm text-gray-600">Tu asistencia y evaluación quedaron registradas.</p>
+          <h1 className="mt-4 text-xl font-bold text-primary dark:text-primary-soft">¡Gracias por participar!</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Tu asistencia y evaluación quedaron registradas.</p>
         </div>
       </PublicLayout>
     );
   }
 
   const obligatorioOk =
-    f.nombreCompleto.trim() && f.documento.trim() && f.correo.trim() && f.programaAcademicoId &&
-    f.calificacionGeneral > 0;
+    f.nombreCompleto.trim() && f.documento.trim() && f.correo.trim() && f.programaAcademicoId;
 
   return (
     <PublicLayout>
       <div className="card mt-4">
-        <h1 className="text-lg font-bold text-primary">Registro de asistencia y evaluación</h1>
-        <p className="text-sm text-gray-600 mt-1">
+        <h1 className="text-lg font-bold text-primary dark:text-primary-soft">Registro de asistencia y evaluación</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           <strong>{info.curso}</strong> · {info.fecha} · {info.horaInicio}–{info.horaFin} · {info.codigo}
         </p>
       </div>
@@ -141,15 +155,15 @@ export default function Asistencia() {
                 }}
               />
               {progAbierto && (
-                <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+                <ul className="scroll-fino absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-gray-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-lg">
                   {programasFiltrados.length === 0 && (
-                    <li className="px-3 py-2 text-sm text-gray-500">Sin resultados</li>
+                    <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados</li>
                   )}
                   {programasFiltrados.map((p, i) => (
                     <li key={p.id}>
                       <button
                         type="button"
-                        className={`w-full px-3 py-2 text-left text-sm ${i === progIdx ? "bg-primary/10 text-primary" : "hover:bg-gray-50"}`}
+                        className={`w-full px-3 py-2 text-left text-sm ${i === progIdx ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-soft" : "hover:bg-gray-50 dark:hover:bg-night-800"}`}
                         onMouseDown={e => { e.preventDefault(); elegirPrograma(p); }}
                       >
                         {p.nombre}
@@ -159,22 +173,52 @@ export default function Asistencia() {
                 </ul>
               )}
               {progTexto && !f.programaAcademicoId && !progAbierto && (
-                <p className="mt-1 text-xs text-amber-700">Selecciona un programa de la lista.</p>
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Selecciona un programa de la lista.</p>
               )}
             </div>
           </div>
         </section>
 
         <section className="form-section">
-          <h2 className="form-section-title">Evalúa la formación</h2>
+          <h2 className="form-section-title">Evaluación de aspectos académicos</h2>
+          <div className="space-y-3">
+            <Pregunta
+              texto="El contenido del curso de formación cumplió el objetivo"
+              valor={f.contenidoObjetivo}
+              onChange={v => setF({ ...f, contenidoObjetivo: v })}
+            />
+            <Pregunta
+              texto="La metodología del curso de formación es adecuada"
+              valor={f.metodologiaAdecuada}
+              onChange={v => setF({ ...f, metodologiaAdecuada: v })}
+            />
+          </div>
+        </section>
+
+        <section className="form-section">
+          <h2 className="form-section-title">Evaluación del facilitador</h2>
+          <div className="space-y-3">
+            <Pregunta
+              texto="Dominio del tema"
+              valor={f.dominioTema}
+              onChange={v => setF({ ...f, dominioTema: v })}
+            />
+            <Pregunta
+              texto="Coherencia en las exposiciones"
+              valor={f.coherenciaExposicion}
+              onChange={v => setF({ ...f, coherenciaExposicion: v })}
+            />
+          </div>
+        </section>
+
+        <section className="form-section">
+          <h2 className="form-section-title">Satisfacción general</h2>
           <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-700 mb-1">¿Cómo calificas la formación recibida? *</div>
-              <Estrellas
-                valor={f.calificacionGeneral}
-                onChange={v => setF({ ...f, calificacionGeneral: v })}
-              />
-            </div>
+            <Pregunta
+              texto="¿Cómo calificaría su satisfacción en general con el servicio recibido?"
+              valor={f.calificacionGeneral}
+              onChange={v => setF({ ...f, calificacionGeneral: v })}
+            />
 
             <div>
               <label className="label-base" htmlFor="obs">Observaciones (opcional)</label>

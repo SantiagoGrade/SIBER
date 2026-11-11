@@ -1,21 +1,22 @@
 import { ReactNode, useEffect } from "react";
+import { useBloquearScroll } from "./ui";
 
 interface Props { abierto: boolean; onClose: () => void; rol: "SUPER_ADMIN" | "ADMIN" | "FORMADOR" }
 
 function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <section className="border-t border-gray-100 pt-4 first:border-t-0 first:pt-0">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-primary">{titulo}</h3>
-      <div className="mt-2 space-y-2 text-sm text-gray-700">{children}</div>
+    <section className="border-t border-gray-100 dark:border-night-800 pt-4 first:border-t-0 first:pt-0">
+      <h3 className="text-sm font-bold uppercase tracking-wide text-primary dark:text-primary-soft">{titulo}</h3>
+      <div className="mt-2 space-y-2 text-sm text-gray-700 dark:text-gray-300">{children}</div>
     </section>
   );
 }
 
 function Punto({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
-      <div className="font-semibold text-gray-800">{titulo}</div>
-      <div className="mt-1 space-y-1 text-gray-600">{children}</div>
+    <div className="rounded-xl border border-gray-200 dark:border-night-700 bg-gray-50/60 dark:bg-night-900/60 p-3">
+      <div className="font-semibold text-gray-800 dark:text-gray-200">{titulo}</div>
+      <div className="mt-1 space-y-1 text-gray-600 dark:text-gray-400">{children}</div>
     </div>
   );
 }
@@ -23,13 +24,13 @@ function Punto({ titulo, children }: { titulo: string; children: ReactNode }) {
 function SiNo({ si, no }: { si: string[]; no: string[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-        <div className="font-semibold text-emerald-800">Sí puedes</div>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-emerald-800">{si.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/15 p-3">
+        <div className="font-semibold text-emerald-800 dark:text-emerald-300">Sí puedes</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-emerald-800 dark:text-emerald-300">{si.map((t, i) => <li key={i}>{t}</li>)}</ul>
       </div>
-      <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-        <div className="font-semibold text-red-800">No puedes</div>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-red-800">{no.map((t, i) => <li key={i}>{t}</li>)}</ul>
+      <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-3">
+        <div className="font-semibold text-red-800 dark:text-red-300">No puedes</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-red-800 dark:text-red-300">{no.map((t, i) => <li key={i}>{t}</li>)}</ul>
       </div>
     </div>
   );
@@ -55,7 +56,7 @@ function General() {
           <span className="badge-verde">CONFIRMADA</span><span>→</span>
           <span className="badge-azul">EN_CURSO</span><span>→</span>
           <span className="badge-gris">FINALIZADA</span>
-          <span className="text-gray-400">o</span>
+          <span className="text-gray-400 dark:text-gray-500">o</span>
           <span className="badge-rojo">CANCELADA</span>
         </div>
         <ul className="list-disc space-y-1 pl-5">
@@ -119,7 +120,7 @@ function ManualAdmin({ superAdmin }: { superAdmin: boolean }) {
         <Punto titulo="4. Cancelar la reserva">
           <p>Última opción: anula la formación y notifica al docente con el motivo.</p>
         </Punto>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Mientras la solicitud no se resuelva, la franja original sigue ocupada: nadie más puede tomarla.
         </p>
       </Seccion>
@@ -143,7 +144,7 @@ function ManualAdmin({ superAdmin }: { superAdmin: boolean }) {
             <li><strong>Disponibilidad semanal:</strong> sus franjas oficiales por día. El formador las ve pero no las edita: tú las defines aquí.</li>
             <li><strong>Excepciones:</strong> vacaciones, incapacidad, calamidad, permiso, bloqueo o fecha especial. Se restan de su disponibilidad.</li>
           </ul>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Ojo: no puedes quitar disponibilidad que cubre reservas confirmadas a futuro sin resolverlas antes.
           </p>
         </Punto>
@@ -219,7 +220,7 @@ function ManualFormador() {
           <li>Habla con el administrador encargado para que gestione tu solicitud: él decide si asigna un reemplazo, le propone otra fecha al docente o cancela la reserva.</li>
           <li>Sigue el estado en <strong>Reasignaciones</strong>. Mientras no se resuelva, la franja sigue siendo tuya: no la sueltan ni te la quitan.</li>
         </ol>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Si te vas de vacaciones, te incapacitas o cambia tu horario, también es con el administrador:
           él registra las excepciones y tu disponibilidad semanal.
         </p>
@@ -253,6 +254,7 @@ function ManualFormador() {
 }
 
 export function ManualUsuario({ abierto, onClose, rol }: Props) {
+  useBloquearScroll(abierto);
   useEffect(() => {
     if (!abierto) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -266,17 +268,17 @@ export function ManualUsuario({ abierto, onClose, rol }: Props) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4" onClick={onClose}>
       <div
         role="dialog" aria-modal="true" aria-label="Manual de usuario"
-        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-100 dark:border-night-800 bg-white dark:bg-night-900 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-night-800 px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-primary">Manual de usuario</h2>
-            <p className="text-xs text-gray-500">Guía de SIBER para el rol {NOMBRE_ROL[rol]}</p>
+            <h2 className="text-lg font-bold text-primary dark:text-primary-soft">Manual de usuario</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Guía de SIBER para el rol {NOMBRE_ROL[rol]}</p>
           </div>
           <button
             onClick={onClose} aria-label="Cerrar manual"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-lg text-gray-500 transition hover:bg-gray-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 dark:border-night-700 text-lg text-gray-500 dark:text-gray-400 transition hover:bg-gray-50 dark:hover:bg-night-800"
           >
             ×
           </button>

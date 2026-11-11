@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, mensajeError } from "../../api/client";
 import { FormadorLayout } from "../../components/Layout";
-import { ErrorMsg, EstadoBadge, fmtFecha, fmtHora } from "../../components/ui";
+import { ErrorMsg, EstadoBadge, fmtFecha, fmtHora, useBloquearScroll } from "../../components/ui";
 import {
   CalendarioMes, EventoDia, diaClave, fechaLarga,
   COLOR_ESTADO_CAL, INCIDENCIA, ESTILO_CARD, ESTILO_INCIDENCIA,
@@ -29,6 +29,7 @@ export default function CalendarioFormador() {
   const [fecha, setFecha] = useState(new Date());
   const [selDia, setSelDia] = useState(diaClave(new Date()));
   const [sel, setSel] = useState<Ev | null>(null);
+  useBloquearScroll(!!sel);
 
   useEffect(() => {
     const desde = new Date(fecha); desde.setDate(1); desde.setMonth(desde.getMonth() - 1);
@@ -81,17 +82,17 @@ export default function CalendarioFormador() {
 
         <div>
           <div className="card flex h-[calc(100vh-10rem)] min-h-[30rem] flex-col self-start">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Reservas del día</h3>
-            <p className="mt-1 text-sm font-semibold text-gray-800 capitalize">{fechaLarga(selDia)}</p>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Reservas del día</h3>
+            <p className="mt-1 text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">{fechaLarga(selDia)}</p>
             {evsSel.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-night-800 text-gray-400 dark:text-gray-500">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-gray-700">Sin eventos</p>
-                <p className="mt-0.5 text-xs text-gray-400">No hay reservas para este día</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sin eventos</p>
+                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">No hay reservas para este día</p>
               </div>
             ) : (
               <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-auto">
@@ -103,8 +104,8 @@ export default function CalendarioFormador() {
                         <span className={`text-xs font-bold ${estilo.hora}`}>{fmtHora(e.start)} – {fmtHora(e.end)}</span>
                         <EstadoBadge estado={e.reserva.estado} />
                       </div>
-                      <div className="mt-0.5 font-semibold text-gray-900">{e.reserva.curso}</div>
-                      <div className="mt-1.5 space-y-1 text-xs text-gray-700">
+                      <div className="mt-0.5 font-semibold text-gray-900 dark:text-gray-100">{e.reserva.curso}</div>
+                      <div className="mt-1.5 space-y-1 text-xs text-gray-700 dark:text-gray-300">
                         <Linea icon={ICONO.persona} color={estilo.hora}>{e.reserva.docenteNombre}</Linea>
                         <Linea icon={ICONO.correo} color={estilo.hora}>{e.reserva.docenteCorreo}</Linea>
                         {e.reserva.docenteTelefono && <Linea icon={ICONO.telefono} color={estilo.hora}>{e.reserva.docenteTelefono}</Linea>}
@@ -112,10 +113,10 @@ export default function CalendarioFormador() {
                         {e.reserva.facultad && <Linea icon={ICONO.facultad} color={estilo.hora}>{e.reserva.facultad}</Linea>}
                         <Linea icon={ICONO.asistentes} color={estilo.hora}>{e.reserva.asistentes} asistente{e.reserva.asistentes === 1 ? "" : "s"}</Linea>
                       </div>
-                      {e.reserva.incidenciaPendiente && <div className="mt-1.5 text-xs font-medium text-amber-700">Incidencia de reasignación pendiente</div>}
+                      {e.reserva.incidenciaPendiente && <div className="mt-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">Incidencia de reasignación pendiente</div>}
                       <div className="mt-2 flex justify-end">
                         <button
-                          className="rounded-lg border border-primary/40 bg-white px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                          className="rounded-lg border border-primary/40 dark:border-primary-soft/40 bg-white dark:bg-night-900 px-3 py-1 text-xs font-semibold text-primary dark:text-primary-soft transition hover:bg-primary/10 dark:hover:bg-primary/20"
                           onClick={() => setSel(e)}
                         >
                           Más detalles
@@ -135,8 +136,8 @@ export default function CalendarioFormador() {
           <div className="card max-h-[90vh] w-full max-w-lg overflow-auto p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-primary">{sel.reserva.curso}</h3>
-                <p className="mt-0.5 font-mono text-xs text-gray-500">{sel.reserva.codigo}</p>
+                <h3 className="text-lg font-semibold text-primary dark:text-primary-soft">{sel.reserva.curso}</h3>
+                <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">{sel.reserva.codigo}</p>
               </div>
               <EstadoBadge estado={sel.reserva.estado} />
             </div>

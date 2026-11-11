@@ -15,6 +15,7 @@ export interface SolicitudReservaInput {
   docenteTelefono?: string;
   aula?: string;
   facultadId?: string;
+  programaAcademicoId?: string;
   cursoId: string;
   iniciaAt: Date;
   terminaAt: Date;
@@ -61,6 +62,14 @@ export async function crearReserva(input: SolicitudReservaInput, idempotencyKey?
           const fac = await tx.facultad.findUnique({ where: { id: input.facultadId } });
           if (!fac || !fac.activo) throw badRequest("Facultad inválida");
         }
+        if (input.programaAcademicoId) {
+          const prog = await tx.programaAcademico.findUnique({ where: { id: input.programaAcademicoId } });
+          if (!prog || !prog.activo) throw badRequest("Programa académico inválido");
+          if (input.facultadId && prog.facultadId !== input.facultadId) {
+            throw badRequest("El programa no pertenece a la facultad seleccionada");
+          }
+          input.facultadId = input.facultadId ?? prog.facultadId ?? undefined;
+        }
 
         const elegido = await mejorCandidato(tx, input.cursoId, inicio, fin);
         if (!elegido) {
@@ -93,6 +102,7 @@ export async function crearReserva(input: SolicitudReservaInput, idempotencyKey?
             docenteTelefono: input.docenteTelefono ?? null,
             aula: input.aula ?? null,
             facultadId: input.facultadId ?? null,
+            programaAcademicoId: input.programaAcademicoId ?? null,
             iniciaAt: inicio.toJSDate(),
             terminaAt: fin.toJSDate(),
             estado: "CONFIRMADA",

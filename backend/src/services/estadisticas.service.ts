@@ -9,6 +9,7 @@ export interface FiltroEstadisticas {
   formadorId?: string;
   facultadId?: string;
   estado?: "CONFIRMADA" | "EN_CURSO" | "FINALIZADA" | "CANCELADA";
+  codigo?: string;
   orden?: "asc" | "desc";
   mes?: number;       // 1-12
   semestre?: 1 | 2;   // 1 = ene-jun, 2 = jul-dic
@@ -37,12 +38,41 @@ export function whereReserva(f: FiltroEstadisticas) {
     ...(f.formadorId ? { formadorId: f.formadorId } : {}),
     ...(f.facultadId ? { facultadId: f.facultadId } : {}),
     ...(f.estado ? { estado: f.estado } : {}),
+    ...(f.codigo ? { codigo: { contains: f.codigo, mode: "insensitive" as const } } : {}),
   };
 }
 
 function promedio(nums: number[]): { promedio: number | null; respuestas: number } {
   if (!nums.length) return { promedio: null, respuestas: 0 };
   return { promedio: Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100, respuestas: nums.length };
+}
+
+function promedioNullable(nums: (number | null)[]) {
+  return promedio(nums.filter((v): v is number => v !== null));
+}
+
+interface EvalConAspectos {
+  calificacionGeneral: number;
+  contenidoObjetivo: number | null;
+  metodologiaAdecuada: number | null;
+  dominioTema: number | null;
+  coherenciaExposicion: number | null;
+}
+
+/** Promedios por pregunta y por grupo para un subconjunto de evaluaciones. */
+function resumenRol(lista: EvalConAspectos[]) {
+  return {
+    evaluaciones: lista.length,
+    general: promedio(lista.map(e => e.calificacionGeneral)),
+    academicos: promedioNullable(lista.flatMap(e => [e.contenidoObjetivo, e.metodologiaAdecuada])),
+    facilitador: promedioNullable(lista.flatMap(e => [e.dominioTema, e.coherenciaExposicion])),
+    aspectos: {
+      contenidoObjetivo: promedioNullable(lista.map(e => e.contenidoObjetivo)),
+      metodologiaAdecuada: promedioNullable(lista.map(e => e.metodologiaAdecuada)),
+      dominioTema: promedioNullable(lista.map(e => e.dominioTema)),
+      coherenciaExposicion: promedioNullable(lista.map(e => e.coherenciaExposicion)),
+    },
+  };
 }
 
 /** Dashboard global (Administrador / Super Administrador). */
@@ -66,7 +96,7 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
     where: { reservaId: { in: idsValidas } },
     include: {
       reserva: { select: { codigo: true, cursoId: true, formadorId: true, iniciaAt: true, docenteNombre: true, curso: { select: { nombre: true } }, formador: { select: { cuenta: { select: { nombreCompleto: true } } } } } },
-      asistencia: { select: { nombreCompleto: true } },
+      asistencia: { select: { nombreCompleto: true, esDocente: true } },
     },
   });
   const asistencias = await prisma.asistencia.count({ where: { reservaId: { in: idsValidas } } });
@@ -102,6 +132,22 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
 
   // Evaluaciones
   const calGen = evaluaciones.map(e => e.calificacionGeneral);
+
+  // Promedios por pregunta y por grupo (aspectos académicos / facilitador)
+  const aspectos = {
+    contenidoObjetivo: promedioNullable(evaluaciones.map(e => e.contenidoObjetivo)),
+    metodologiaAdecuada: promedioNullable(evaluaciones.map(e => e.metodologiaAdecuada)),
+    dominioTema: promedioNullable(evaluaciones.map(e => e.dominioTema)),
+    coherenciaExposicion: promedioNullable(evaluaciones.map(e => e.coherenciaExposicion)),
+    academicos: promedioNullable(evaluaciones.flatMap(e => [e.contenidoObjetivo, e.metodologiaAdecuada])),
+    facilitador: promedioNullable(evaluaciones.flatMap(e => [e.dominioTema, e.coherenciaExposicion])),
+  };
+
+  // Split: evaluaciones del docente solicitante vs. asistentes regulares
+  const porRol = {
+    asistentes: resumenRol(evaluaciones.filter(e => !e.asistencia.esDocente)),
+    docentes: resumenRol(evaluaciones.filter(e => e.asistencia.esDocente)),
+  };
 
   // Por curso y por formador (promedios)
   const porCurso = new Map<string, { nombre: string; vals: number[]; n: number }>();
@@ -169,6 +215,8 @@ export async function estadisticasAdmin(f: FiltroEstadisticas) {
       calificacionGeneral: promedio(calGen),
       totalEvaluaciones: evaluaciones.length,
       tasaRespuesta: asistencias ? Math.round((evaluaciones.length / asistencias) * 1000) / 10 : null,
+      aspectos,
+      porRol,
       porCurso: [...porCurso.entries()].map(([id, v]) => ({ cursoId: id, nombre: v.nombre, ...promedio(v.vals) })),
       porFormador: [...porFormador.entries()].map(([id, v]) => ({ formadorId: id, nombre: v.nombre, ...promedio(v.vals) })),
       evolucion: [...evolucion.entries()].sort().map(([mes, vals]) => ({ mes, ...promedio(vals) })),

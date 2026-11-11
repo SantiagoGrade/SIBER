@@ -6,7 +6,7 @@ export interface Cuenta {
 }
 
 export interface Curso { id: string; nombre: string; descripcion?: string | null; activo: boolean }
-export interface CatalogoItem { id: string; nombre: string; activo?: boolean }
+export interface CatalogoItem { id: string; nombre: string; activo?: boolean; facultadId?: string | null }
 export interface Franja { inicio: string; fin: string }
 export interface DisponibilidadPublica { libres: Franja[]; ocupados: Franja[]; anticipacionMinimaDias?: number }
 
@@ -15,7 +15,7 @@ export interface Reserva {
   formador: string; formadorId?: string; formadorCorreo?: string;
   docenteNombre: string; docenteCorreo: string;
   docenteTelefono?: string | null; aula?: string | null;
-  facultad: string | null;
+  facultad: string | null; programa?: string | null;
   iniciaAt: string; terminaAt: string;
   estado: "CONFIRMADA" | "EN_CURSO" | "FINALIZADA" | "CANCELADA";
   incidenciaPendiente: boolean; asistentes: number;
@@ -40,6 +40,28 @@ export interface Reasignacion {
 
 export interface Promedio { promedio: number | null; respuestas: number }
 
+export interface AspectosEvaluacion {
+  contenidoObjetivo: Promedio;
+  metodologiaAdecuada: Promedio;
+  dominioTema: Promedio;
+  coherenciaExposicion: Promedio;
+  academicos: Promedio;
+  facilitador: Promedio;
+}
+
+export interface ResumenRol {
+  evaluaciones: number;
+  general: Promedio;
+  academicos: Promedio;
+  facilitador: Promedio;
+  aspectos: {
+    contenidoObjetivo: Promedio;
+    metodologiaAdecuada: Promedio;
+    dominioTema: Promedio;
+    coherenciaExposicion: Promedio;
+  };
+}
+
 export interface StatsAdmin {
   reservas: { solicitadas: number; confirmadas: number; enCurso: number; finalizadas: number; canceladas: number; proximas: number };
   reasignacionesPendientes: number;
@@ -52,6 +74,8 @@ export interface StatsAdmin {
     calificacionGeneral: Promedio;
     totalEvaluaciones: number;
     tasaRespuesta: number | null;
+    aspectos: AspectosEvaluacion;
+    porRol: { asistentes: ResumenRol; docentes: ResumenRol };
     porCurso: { cursoId: string; nombre: string; promedio: number | null; respuestas: number }[];
     porFormador: { formadorId: string; nombre: string; promedio: number | null; respuestas: number }[];
     evolucion: { mes: string; promedio: number | null; respuestas: number }[];

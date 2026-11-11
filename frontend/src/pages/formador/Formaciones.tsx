@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, mensajeError } from "../../api/client";
 import { FormadorLayout } from "../../components/Layout";
-import { Spinner, ErrorMsg, OkMsg, EstadoBadge, Select, fmtFecha, fmtHora } from "../../components/ui";
+import { Spinner, ErrorMsg, OkMsg, EstadoBadge, Select, BotonLimpiar, fmtFecha, fmtHora, resumenAspectos } from "../../components/ui";
 import { Curso } from "../../api/types";
 
 interface MiReserva { id: string; codigo: string; curso: string; iniciaAt: string; terminaAt: string; estado: string; docenteNombre: string; docenteCorreo: string; docenteTelefono?: string | null; aula?: string | null; incidenciaPendiente: boolean; asistentes: number }
-interface Asistente { id: string; nombreCompleto: string; documento: string; correo: string; programa: string; fechaRegistro: string; evaluacion: { calificacionGeneral: number } | null }
+interface Asistente {
+  id: string; nombreCompleto: string; documento: string; correo: string; programa: string;
+  esDocente: boolean; fechaRegistro: string;
+  evaluacion: {
+    contenidoObjetivo: number | null; metodologiaAdecuada: number | null;
+    dominioTema: number | null; coherenciaExposicion: number | null;
+    calificacionGeneral: number;
+  } | null;
+}
 
-const FILTRO_INICIAL = { estado: "", cursoId: "", orden: "desc", desde: "", hasta: "" };
+const FILTRO_INICIAL = { estado: "", cursoId: "", codigo: "", orden: "desc", desde: "", hasta: "" };
 
 export default function Formaciones() {
   const [lista, setLista] = useState<MiReserva[] | null>(null);
@@ -19,10 +27,13 @@ export default function Formaciones() {
   const [ok, setOk] = useState<string | null>(null);
   const [reasig, setReasig] = useState({ motivo: "", observacion: "" });
 
+  const cargarReq = useRef(0);
   const cargar = () => {
+    const reqId = ++cargarReq.current;
     const params: Record<string, string> = {};
     if (filtro.estado) params.estado = filtro.estado;
     if (filtro.cursoId) params.cursoId = filtro.cursoId;
+    if (filtro.codigo.trim()) params.codigo = filtro.codigo.trim();
     params.orden = filtro.orden;
     if (filtro.desde) params.desde = filtro.desde;
     // "hasta" inclusivo: el backend filtra iniciaAt < hasta, se envía el día siguiente
@@ -32,14 +43,15 @@ export default function Formaciones() {
       params.hasta = d.toISOString();
     }
     api.get("/formador/reservas", { params })
-      .then(r => setLista(r.data))
-      .catch(e => setError(mensajeError(e)));
+      .then(r => { if (reqId === cargarReq.current) setLista(r.data); })
+      .catch(e => { if (reqId === cargarReq.current) setError(mensajeError(e)); });
   };
   useEffect(() => {
     api.get("/publico/cursos").then(r => setCursos(r.data)).catch(() => {});
   }, []);
   useEffect(() => {
-    cargar();
+    const t = setTimeout(cargar, 300);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtro]);
 
@@ -62,14 +74,14 @@ export default function Formaciones() {
     <FormadorLayout titulo="Mis formaciones">
       <ErrorMsg msg={error} /><OkMsg msg={ok} />
       <div className="card my-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Filtros{lista && <span className="normal-case font-normal text-gray-400"> · {lista.length} resultado{lista.length === 1 ? "" : "s"}</span>}
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Filtros{lista && <span className="normal-case font-normal text-gray-400 dark:text-gray-500"> · {lista.length} resultado{lista.length === 1 ? "" : "s"}</span>}
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mt-4">
           <div>
             <label htmlFor="for-f-estado" className="label-base">Estado</label>
             <Select id="for-f-estado" value={filtro.estado} onChange={v => setFiltro({ ...filtro, estado: v })}
-              opciones={[{ value: "", label: "Todos" }, ...["CONFIRMADA", "EN_CURSO", "FINALIZADA", "CANCELADA"].map(e => ({ value: e, label: e }))]} />
+              opciones={[{ value: "", label: "Todos" }, ...["CONFIRMADA", "EN_CURSO", "FINALIZADA", "CANCELADA"].map(e => ({ value: e, label: e.replaceAll("_", " ") }))]} />
           </div>
           <div>
             <label htmlFor="for-f-curso" className="label-base">Curso</label>
@@ -89,14 +101,15 @@ export default function Formaciones() {
             <label htmlFor="for-f-hasta" className="label-base">Hasta</label>
             <input id="for-f-hasta" type="date" className="input-base" value={filtro.hasta} onChange={e => setFiltro({ ...filtro, hasta: e.target.value })} />
           </div>
-          <div className="flex items-end">
-            <button
-              className="btn-secondary w-full"
-              disabled={!filtro.estado && !filtro.cursoId && !filtro.desde && !filtro.hasta}
+          <div>
+            <label htmlFor="for-f-codigo" className="label-base">Código</label>
+            <input id="for-f-codigo" className="input-base" placeholder="SIF-…" value={filtro.codigo} onChange={e => setFiltro({ ...filtro, codigo: e.target.value })} />
+          </div>
+          <div className="flex items-end justify-end">
+            <BotonLimpiar
+              disabled={!filtro.estado && !filtro.cursoId && !filtro.codigo && !filtro.desde && !filtro.hasta}
               onClick={() => setFiltro({ ...FILTRO_INICIAL, orden: filtro.orden })}
-            >
-              Limpiar filtros
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -109,12 +122,12 @@ export default function Formaciones() {
                 <thead><tr><th className="th sticky top-0">Código</th><th className="th sticky top-0">Curso</th><th className="th sticky top-0">Fecha</th><th className="th sticky top-0">Estado</th><th className="th sticky top-0 text-center">Asist.</th></tr></thead>
                 <tbody>
                   {lista.length === 0 && (
-                    <tr><td colSpan={5} className="td py-10 text-center text-gray-400">Sin formaciones con estos filtros.</td></tr>
+                    <tr><td colSpan={5} className="td py-10 text-center text-gray-400 dark:text-gray-500">Sin formaciones con estos filtros.</td></tr>
                   )}
                   {lista.map(r => (
                     <tr
                       key={r.id}
-                      className={`border-t border-gray-100 cursor-pointer transition ${sel?.id === r.id ? "bg-primary/5" : "hover:bg-gray-50"}`}
+                      className={`border-t border-gray-100 dark:border-night-800 cursor-pointer transition ${sel?.id === r.id ? "bg-primary/5 dark:bg-primary/15" : "hover:bg-gray-50 dark:hover:bg-night-800"}`}
                       onClick={() => ver(r)}
                     >
                       <td className="td font-mono">{r.codigo}</td>
@@ -133,7 +146,7 @@ export default function Formaciones() {
             {sel ? (
               <>
                 <div className="card">
-                  <h3 className="font-semibold text-primary">{sel.codigo} — {sel.curso}</h3>
+                  <h3 className="font-semibold text-primary dark:text-primary-soft">{sel.codigo} — {sel.curso}</h3>
                   <div className="text-sm mt-1">{fmtFecha(sel.iniciaAt)} {fmtHora(sel.iniciaAt)}–{fmtHora(sel.terminaAt)} · {sel.docenteNombre}</div>
                   <div className="text-sm mt-1 space-y-1">
                     {sel.aula && <div><strong>Aula / lugar:</strong> {sel.aula}</div>}
@@ -146,25 +159,25 @@ export default function Formaciones() {
                 </div>
                 {sel.estado === "CONFIRMADA" && !sel.incidenciaPendiente && (
                   <div className="card">
-                    <h4 className="font-semibold text-primary text-sm">Solicitar reasignación por calamidad</h4>
+                    <h4 className="font-semibold text-primary dark:text-primary-soft text-sm">Solicitar reasignación por calamidad</h4>
                     <input className="input-base mt-2" placeholder="Motivo (obligatorio)" value={reasig.motivo} onChange={e => setReasig({ ...reasig, motivo: e.target.value })} />
                     <textarea className="input-base mt-2" rows={2} placeholder="Observación" value={reasig.observacion} onChange={e => setReasig({ ...reasig, observacion: e.target.value })} />
                     <button className="btn-secondary mt-2 text-xs" disabled={reasig.motivo.length < 5} onClick={pedirReasignacion}>Enviar solicitud</button>
                   </div>
                 )}
                 <div className="card">
-                  <h4 className="font-semibold text-primary text-sm">Asistentes ({asistentes.length})</h4>
-                  <div className="max-h-60 overflow-auto mt-2">
+                  <h4 className="font-semibold text-primary dark:text-primary-soft text-sm">Asistentes ({asistentes.length})</h4>
+                  <div className="scroll-fino max-h-60 overflow-auto mt-2">
                     {asistentes.map(a => (
-                      <div key={a.id} className="text-sm border-b border-gray-100 py-1.5">
-                        <div className="font-medium">{a.nombreCompleto} · {a.documento}</div>
-                        <div className="text-xs text-gray-500">{a.programa}{a.evaluacion && ` · ★${a.evaluacion.calificacionGeneral}`}</div>
+                      <div key={a.id} className="text-sm border-b border-gray-100 dark:border-night-800 py-1.5">
+                        <div className="font-medium">{a.nombreCompleto} · {a.documento}{a.esDocente && <span className="badge-azul ml-2">Docente</span>}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{a.programa}{a.evaluacion && ` · ★${a.evaluacion.calificacionGeneral}`}{a.evaluacion && resumenAspectos(a.evaluacion) && ` · ${resumenAspectos(a.evaluacion)}`}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               </>
-            ) : <div className="card text-sm text-gray-500">Selecciona una formación.</div>}
+            ) : <div className="card text-sm text-gray-500 dark:text-gray-400">Selecciona una formación.</div>}
           </div>
         </div>
       )}

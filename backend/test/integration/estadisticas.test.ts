@@ -142,6 +142,42 @@ describe("Estadísticas", () => {
     expect(s.reservasPorMes).toEqual([{ mes: "2026-01", total: 2 }]);
   });
 
+  it("promedia los aspectos y separa las evaluaciones del docente", async () => {
+    const { curso1, f1, programa } = await seed();
+    const r1 = await crearReservaDirecta({
+      cursoId: curso1.id, formadorId: f1.formadorId,
+      inicio: proximoDia(1).inicio.minus({ days: 7 }), fin: proximoDia(1).fin.minus({ days: 7 }),
+      estado: "FINALIZADA",
+    });
+    const a1 = await prisma.asistencia.create({
+      data: { reservaId: r1.id, nombreCompleto: "A", documento: "1", correo: "a@t.co", programaAcademicoId: programa.id, aceptaTratamiento: true },
+    });
+    await prisma.evaluacionFormacion.create({
+      data: { reservaId: r1.id, asistenciaId: a1.id, contenidoObjetivo: 5, metodologiaAdecuada: 3, dominioTema: 4, coherenciaExposicion: 4, calificacionGeneral: 4 },
+    });
+    const a2 = await prisma.asistencia.create({
+      data: { reservaId: r1.id, nombreCompleto: "D", documento: "2", correo: "d@t.co", programaAcademicoId: programa.id, aceptaTratamiento: true, esDocente: true },
+    });
+    await prisma.evaluacionFormacion.create({
+      data: { reservaId: r1.id, asistenciaId: a2.id, contenidoObjetivo: 2, metodologiaAdecuada: 2, dominioTema: 5, coherenciaExposicion: 5, calificacionGeneral: 2 },
+    });
+
+    const s = await estadisticasAdmin({});
+    expect(s.satisfaccion.aspectos.contenidoObjetivo.promedio).toBe(3.5); // (5+2)/2
+    expect(s.satisfaccion.aspectos.academicos.promedio).toBe(3); // (5+3+2+2)/4
+    expect(s.satisfaccion.aspectos.facilitador.promedio).toBe(4.5); // (4+4+5+5)/4
+    expect(s.satisfaccion.porRol.docentes.evaluaciones).toBe(1);
+    expect(s.satisfaccion.porRol.docentes.general.promedio).toBe(2);
+    expect(s.satisfaccion.porRol.asistentes.evaluaciones).toBe(1);
+    expect(s.satisfaccion.porRol.asistentes.general.promedio).toBe(4);
+    // aspectos separados por rol (gráfico "Evaluación por aspecto" docente vs. asistentes)
+    expect(s.satisfaccion.porRol.asistentes.aspectos.contenidoObjetivo.promedio).toBe(5);
+    expect(s.satisfaccion.porRol.asistentes.aspectos.metodologiaAdecuada.promedio).toBe(3);
+    expect(s.satisfaccion.porRol.asistentes.aspectos.dominioTema.promedio).toBe(4);
+    expect(s.satisfaccion.porRol.docentes.aspectos.contenidoObjetivo.promedio).toBe(2);
+    expect(s.satisfaccion.porRol.docentes.aspectos.dominioTema.promedio).toBe(5);
+  });
+
   it("finalizadas sin evaluación se reportan para revisión", async () => {
     const { curso1, f1 } = await seed();
     await crearReservaDirecta({ cursoId: curso1.id, formadorId: f1.formadorId, inicio: proximoDia(1).inicio.minus({ days: 7 }), fin: proximoDia(1).fin.minus({ days: 7 }), estado: "FINALIZADA" });

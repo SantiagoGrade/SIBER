@@ -6,6 +6,15 @@
     <link rel="icon" type="image/png" href="/colmayor.png" />
     <link rel="apple-touch-icon" href="/colmayor.png" />
     <title>SIBER — Sistema Bibliotecario de Reservas</title>
+    <script>
+      // Aplica el tema guardado antes del primer pintado para evitar destello
+      try {
+        var t = localStorage.getItem("siber-tema");
+        if (t === "oscuro" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

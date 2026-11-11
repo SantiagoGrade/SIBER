@@ -53,6 +53,55 @@ describe("Reservas", () => {
     expect(await prisma.historialReserva.count({ where: { reservaId: reserva.id } })).toBe(1);
   });
 
+  it("persiste facultad y programa cuando el programa pertenece a la facultad", async () => {
+    const { curso } = await escenario();
+    const fac = await prisma.facultad.create({ data: { nombre: "Facultad X" } });
+    const prog = await prisma.programaAcademico.create({ data: { nombre: "Prog X", facultadId: fac.id } });
+    const { inicio, fin } = proximoDia(2, 10, 60);
+
+    const { reserva } = await crearReserva({
+      docenteNombre: "D", docenteCorreo: "d@t.co", cursoId: curso.id,
+      facultadId: fac.id, programaAcademicoId: prog.id,
+      iniciaAt: inicio.toJSDate(), terminaAt: fin.toJSDate(),
+    });
+    expect(reserva.facultadId).toBe(fac.id);
+    expect(reserva.programaAcademicoId).toBe(prog.id);
+  });
+
+  it("rechaza un programa que no pertenece a la facultad seleccionada", async () => {
+    const { curso } = await escenario();
+    const facA = await prisma.facultad.create({ data: { nombre: "Fac A" } });
+    const facB = await prisma.facultad.create({ data: { nombre: "Fac B" } });
+    const progDeB = await prisma.programaAcademico.create({ data: { nombre: "Prog B", facultadId: facB.id } });
+    const inexistente = "prog-inexistente";
+    const { inicio, fin } = proximoDia(2, 10, 60);
+
+    await expect(crearReserva({
+      docenteNombre: "D", docenteCorreo: "d@t.co", cursoId: curso.id,
+      facultadId: facA.id, programaAcademicoId: progDeB.id,
+      iniciaAt: inicio.toJSDate(), terminaAt: fin.toJSDate(),
+    })).rejects.toMatchObject({ status: 400 });
+    await expect(crearReserva({
+      docenteNombre: "D", docenteCorreo: "d@t.co", cursoId: curso.id,
+      facultadId: facA.id, programaAcademicoId: inexistente,
+      iniciaAt: inicio.toJSDate(), terminaAt: fin.toJSDate(),
+    })).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("deriva la facultad desde el programa cuando no se envía facultadId", async () => {
+    const { curso } = await escenario();
+    const fac = await prisma.facultad.create({ data: { nombre: "Fac Derivada" } });
+    const prog = await prisma.programaAcademico.create({ data: { nombre: "Prog Der", facultadId: fac.id } });
+    const { inicio, fin } = proximoDia(2, 10, 60);
+
+    const { reserva } = await crearReserva({
+      docenteNombre: "D", docenteCorreo: "d@t.co", cursoId: curso.id,
+      programaAcademicoId: prog.id,
+      iniciaAt: inicio.toJSDate(), terminaAt: fin.toJSDate(),
+    });
+    expect(reserva.facultadId).toBe(fac.id);
+  });
+
   it("rechaza reservar para hoy o mañana (anticipación de 2 días de calendario)", async () => {
     const { curso } = await escenario();
     const hoy = DateTime.now().setZone(ZONA).startOf("day");

@@ -1,6 +1,6 @@
 /**
  * Entorno de pruebas de integración.
- * - Base de datos PostgreSQL REAL en :5434 (docker compose service `db-test`).
+ * - Base de datos PostgreSQL REAL `siber_test` en :5433 (mismo contenedor `db`).
  * - Los tests deben importar `db`, `resetDb`, `crearEscenario` desde aquí.
  * - El servidor SMTP de captura (`smtp-test.ts`) permite probar el outbox
  *   y el job del QR con SMTP real (y simular fallos apagándolo).
@@ -10,7 +10,7 @@ import path from "path";
 
 process.env.DATABASE_URL =
   process.env.DATABASE_URL_TEST ??
-  "postgresql://siber:siber_test_password@localhost:5434/siber_test?schema=public";
+  "postgresql://siber:siber_dev_password@localhost:5433/siber_test?schema=public";
 process.env.JWT_SECRET = "test-secret-siber-0123456789abcdef0123456789abcdef";
 process.env.PUBLIC_APP_URL = "http://localhost:3999";
 process.env.OUTBOX_POLL_MS = "100";

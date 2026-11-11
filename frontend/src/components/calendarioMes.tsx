@@ -18,23 +18,23 @@ export const COLOR_ESTADO_CAL: Record<string, string> = {
 };
 
 export const ESTILO_CARD: Record<string, { fondo: string; hora: string }> = {
-  CONFIRMADA: { fondo: "border-primary bg-primary/15", hora: "text-primary" },
-  EN_CURSO: { fondo: "border-blue-600 bg-blue-100", hora: "text-blue-700" },
-  FINALIZADA: { fondo: "border-gray-400 bg-gray-200", hora: "text-gray-600" },
-  CANCELADA: { fondo: "border-red-500 bg-red-100", hora: "text-red-700" },
+  CONFIRMADA: { fondo: "border-primary dark:border-primary-soft/50 bg-primary/15 dark:bg-primary/25", hora: "text-primary dark:text-primary-soft" },
+  EN_CURSO: { fondo: "border-blue-600 bg-blue-100 dark:bg-blue-500/15", hora: "text-blue-700 dark:text-blue-300" },
+  FINALIZADA: { fondo: "border-gray-400 dark:border-night-600 bg-gray-200 dark:bg-night-700", hora: "text-gray-600 dark:text-gray-400" },
+  CANCELADA: { fondo: "border-red-500 bg-red-100 dark:bg-red-500/15", hora: "text-red-700 dark:text-red-400" },
 };
-export const ESTILO_INCIDENCIA = { fondo: "border-amber-500 bg-amber-100", hora: "text-amber-800" };
+export const ESTILO_INCIDENCIA = { fondo: "border-amber-500 bg-amber-100 dark:bg-amber-500/15", hora: "text-amber-800 dark:text-amber-300" };
 
 export function Dato({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-gray-800">{children}</dd>
+      <dt className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{label}</dt>
+      <dd className="mt-0.5 text-sm text-gray-800 dark:text-gray-200">{children}</dd>
     </div>
   );
 }
 
-export function Linea({ icon, color = "text-gray-400", children }: { icon: ReactNode; color?: string; children: ReactNode }) {
+export function Linea({ icon, color = "text-gray-400 dark:text-gray-500", children }: { icon: ReactNode; color?: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-1.5">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`h-3.5 w-3.5 shrink-0 ${color}`}>{icon}</svg>
@@ -84,22 +84,22 @@ export function CalendarioMes({ mes, onMes, eventosPorDia, selDia, onSelDia, ley
 
   return (
     <div className={`card flex flex-col ${className ?? ""}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-800 text-lg capitalize flex items-center gap-2">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg capitalize flex items-center gap-2">
           {nombreMes}
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">{totalEventos} eventos</span>
+          <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary dark:text-primary-soft">{totalEventos} eventos</span>
         </h3>
-        <div className="flex items-center gap-2">
-          <button className="btn-secondary text-xs" onClick={irHoy}>Hoy</button>
-          <button className="btn-secondary px-2.5" onClick={() => moverMes(-1)} aria-label="Mes anterior">‹</button>
-          <button className="btn-secondary px-2.5" onClick={() => moverMes(1)} aria-label="Mes siguiente">›</button>
+        <div className="flex items-center gap-1.5">
+          <button className="btn-secondary px-3 py-1 text-xs" onClick={irHoy}>Hoy</button>
+          <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => moverMes(-1)} aria-label="Mes anterior">‹</button>
+          <button className="btn-secondary px-2.5 py-1 text-xs" onClick={() => moverMes(1)} aria-label="Mes siguiente">›</button>
         </div>
       </div>
 
       <div className="grid grid-cols-7">
-        {DIAS.map(d => <div key={d} className="pb-1.5 text-center text-[11px] font-semibold tracking-wide text-gray-500">{d}</div>)}
+        {DIAS.map(d => <div key={d} className="pb-1 text-center text-[11px] font-semibold tracking-wide text-gray-500 dark:text-gray-400">{d}</div>)}
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-gray-200 bg-gray-200">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-gray-200 dark:border-night-700 bg-gray-200 dark:bg-night-700">
         {dias.map(d => {
           const clave = diaClave(d);
           const esHoy = clave === hoyClave;
@@ -109,29 +109,29 @@ export function CalendarioMes({ mes, onMes, eventosPorDia, selDia, onSelDia, ley
           return (
             <button
               key={clave} type="button" onClick={() => onSelDia(clave)}
-              className={`overflow-hidden bg-white p-1 text-left align-top transition ${fueraMes ? "bg-gray-50/60" : ""} ${esHoy ? "bg-primary/5" : ""} ${esSel ? "shadow-[inset_0_0_0_2px_#0A6A50] z-10" : "hover:bg-gray-50"}`}
+              className={`overflow-hidden bg-white dark:bg-night-900 p-1 text-left align-top transition ${fueraMes ? "bg-gray-50/60 dark:bg-night-900/60" : ""} ${esHoy ? "bg-primary/5 dark:bg-primary/15" : ""} ${esSel ? "shadow-[inset_0_0_0_2px_#0A6A50] dark:shadow-[inset_0_0_0_2px_#10B981] z-10" : "hover:bg-gray-50 dark:hover:bg-night-800"}`}
             >
               <div className="flex justify-end">
-                <span className={`text-[11px] leading-5 ${esHoy ? "flex h-5 w-5 items-center justify-center rounded-full bg-primary font-semibold text-white" : fueraMes ? "text-gray-300" : "text-gray-500"}`}>
+                <span className={`text-[11px] leading-5 ${esHoy ? "flex h-5 w-5 items-center justify-center rounded-full bg-primary font-semibold text-white" : fueraMes ? "text-gray-300 dark:text-gray-500" : "text-gray-500 dark:text-gray-400"}`}>
                   {d.getDate()}
                 </span>
               </div>
               <div className="mt-0.5 space-y-0.5">
                 {evs.slice(0, 3).map(e => (
-                  <div key={e.id} className="flex items-center gap-1 truncate text-[11px] leading-tight text-gray-700" title={e.titulo}>
+                  <div key={e.id} className="flex items-center gap-1 truncate text-[11px] leading-tight text-gray-700 dark:text-gray-300" title={e.titulo}>
                     <i className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: e.color }} />
-                    <span className="text-gray-400">{e.hora}</span>
+                    <span className="text-gray-400 dark:text-gray-500">{e.hora}</span>
                     <span className="truncate">{e.titulo}</span>
                   </div>
                 ))}
-                {evs.length > 3 && <div className="text-[10px] font-medium text-gray-400">+{evs.length - 3} más</div>}
+                {evs.length > 3 && <div className="text-[10px] font-medium text-gray-400 dark:text-gray-500">+{evs.length - 3} más</div>}
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
         {leyenda.map(([color, nombre]) => (
           <span key={nombre} className="inline-flex items-center gap-1.5">
             <i className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />{nombre}

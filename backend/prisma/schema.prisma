@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -160,17 +161,23 @@ model ExcepcionDisponibilidad {
 // ─────────────────────────── Catálogos ───────────────────────────
 
 model Facultad {
-  id      String   @id @default(cuid())
-  nombre  String   @unique
-  activo  Boolean  @default(true)
-  reservas Reserva[]
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  activo    Boolean  @default(true)
+  reservas  Reserva[]
+  programas ProgramaAcademico[]
 }
 
 model ProgramaAcademico {
   id          String       @id @default(cuid())
   nombre      String       @unique
   activo      Boolean      @default(true)
+  facultadId  String?
+  facultad    Facultad?    @relation(fields: [facultadId], references: [id])
   asistencias Asistencia[]
+  reservas    Reserva[]
+
+  @@index([facultadId])
 }
 
 // ─────────────────────────── Reservas ────────────────────────────
@@ -188,6 +195,8 @@ model Reserva {
   aula                String?
   facultadId          String?
   facultad            Facultad?     @relation(fields: [facultadId], references: [id])
+  programaAcademicoId String?
+  programa            ProgramaAcademico? @relation(fields: [programaAcademicoId], references: [id])
   iniciaAt            DateTime
   terminaAt           DateTime
   estado              EstadoReserva @default(CONFIRMADA)
@@ -292,6 +301,7 @@ model Asistencia {
   programaAcademicoId String
   programa            ProgramaAcademico @relation(fields: [programaAcademicoId], references: [id])
   aceptaTratamiento   Boolean  @default(false)
+  esDocente           Boolean  @default(false)
   fechaRegistro       DateTime @default(now())
 
   evaluacion          EvaluacionFormacion?
@@ -307,6 +317,13 @@ model EvaluacionFormacion {
   reserva             Reserva  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
   asistenciaId        String   @unique
   asistencia          Asistencia @relation(fields: [asistenciaId], references: [id], onDelete: Cascade)
+  // Aspectos académicos
+  contenidoObjetivo   Int?
+  metodologiaAdecuada Int?
+  // Facilitador
+  dominioTema         Int?
+  coherenciaExposicion Int?
+  // Satisfacción general
   calificacionGeneral Int
   observaciones       String?
   fechaRegistro       DateTime @default(now())

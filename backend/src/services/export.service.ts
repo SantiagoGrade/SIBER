@@ -85,6 +85,7 @@ async function describirFiltros(f: FiltroEstadisticas): Promise<string> {
     f.facultadId ? prisma.facultad.findUnique({ where: { id: f.facultadId }, select: { nombre: true } }) : null,
   ]);
   const partes: string[] = [];
+  if (f.codigo) partes.push(`Código: ${f.codigo}`);
   if (curso) partes.push(`Curso: ${curso.nombre}`);
   if (formador) partes.push(`Formador: ${formador.cuenta.nombreCompleto}`);
   if (facultad) partes.push(`Facultad: ${facultad.nombre}`);
@@ -115,9 +116,11 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
     { key: "telefono", width: 16 },
     { key: "aula", width: 16 },
     { key: "facultad", width: 24 },
+    { key: "programa", width: 34 },
     { key: "asistentes", width: 11 },
     { key: "evaluaciones", width: 11 },
     { key: "califProm", width: 11 },
+    { key: "califDocente", width: 11 },
     { key: "incidencia", width: 11 },
     { key: "creada", width: 17 },
     { key: "cancelada", width: 17 },
@@ -128,8 +131,8 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
   let fila = tituloYSubtitulo(ws, "SIBER · Reservas de formaciones", await describirFiltros(f), nCols);
   ws.getRow(fila).values = [
     "Código", "Estado", "Fecha", "Inicio", "Fin", "Curso", "Formador", "Docente",
-    "Correo docente", "Teléfono docente", "Aula", "Facultad", "Asistentes",
-    "Evaluaciones", "Calif. prom.", "Incidencia", "Creada el", "Cancelada el",
+    "Correo docente", "Teléfono docente", "Aula", "Facultad", "Programa", "Asistentes",
+    "Evaluaciones", "Calif. prom.", "Calif. docente", "Incidencia", "Creada el", "Cancelada el",
     "Motivo cancelación", "Finalizada el",
   ];
   fila = cabeceraTabla(ws, fila, nCols);
@@ -137,9 +140,9 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
   const reservas = await prisma.reserva.findMany({
     where: whereReserva(f),
     include: {
-      curso: true, facultad: true,
+      curso: true, facultad: true, programa: true,
       formador: { include: { cuenta: true } },
-      evaluaciones: { select: { calificacionGeneral: true } },
+      evaluaciones: { select: { calificacionGeneral: true, asistencia: { select: { esDocente: true } } } },
       _count: { select: { asistencias: true } },
     },
     orderBy: { iniciaAt: "desc" },
@@ -149,6 +152,7 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
     const ini = aBogota(r.iniciaAt);
     const cals = r.evaluaciones.map(e => e.calificacionGeneral);
     const prom = cals.length ? Math.round((cals.reduce((a, b) => a + b, 0) / cals.length) * 100) / 100 : null;
+    const evalDocente = r.evaluaciones.find(e => e.asistencia.esDocente);
     const row = ws.addRow({
       codigo: r.codigo, estado: r.estado,
       fecha: ini.toFormat("dd/MM/yyyy"), inicio: ini.toFormat("HH:mm"),
@@ -156,9 +160,10 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
       curso: r.curso.nombre, formador: r.formador.cuenta.nombreCompleto,
       docente: r.docenteNombre, correo: r.docenteCorreo,
       telefono: r.docenteTelefono ?? "", aula: r.aula ?? "",
-      facultad: r.facultad?.nombre ?? "",
+      facultad: r.facultad?.nombre ?? "", programa: r.programa?.nombre ?? "",
       asistentes: r._count.asistencias, evaluaciones: r.evaluaciones.length,
       califProm: prom ?? "—",
+      califDocente: evalDocente?.calificacionGeneral ?? "—",
       incidencia: r.incidenciaPendiente ? "Sí" : "",
       creada: aBogota(r.createdAt).toFormat("dd/MM/yyyy HH:mm"),
       cancelada: r.canceladaAt ? aBogota(r.canceladaAt).toFormat("dd/MM/yyyy HH:mm") : "",
@@ -172,6 +177,7 @@ async function workbookReservas(f: FiltroEstadisticas): Promise<ExcelJS.Buffer> 
     row.getCell("asistentes").alignment = { vertical: "top", horizontal: "center" };
     row.getCell("evaluaciones").alignment = { vertical: "top", horizontal: "center" };
     row.getCell("califProm").alignment = { vertical: "top", horizontal: "center" };
+    row.getCell("califDocente").alignment = { vertical: "top", horizontal: "center" };
     row.getCell("incidencia").alignment = { vertical: "top", horizontal: "center" };
   }
   return wb.xlsx.writeBuffer();
@@ -219,6 +225,8 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
     ["Calificación promedio institucional", stats.satisfaccion.calificacionGeneral.promedio],
     ["Evaluaciones recibidas", stats.satisfaccion.totalEvaluaciones],
     ["Tasa de respuesta (%)", stats.satisfaccion.tasaRespuesta],
+    ["Evaluaciones de docentes", stats.satisfaccion.porRol.docentes.evaluaciones],
+    ["Satisfacción general del docente", stats.satisfaccion.porRol.docentes.general.promedio],
   ];
   let imparRes = false;
   for (const [k, v] of filas) {
@@ -246,6 +254,36 @@ async function workbookEstadisticas(f: FiltroEstadisticas): Promise<ExcelJS.Buff
       const carga = stats.cargaPorFormador.find(c => c.formadorId === fm.formadorId);
       return [fm.nombre, fm.promedio, fm.respuestas, carga?.horas ?? 0, carga?.reservas ?? 0];
     }),
+  );
+
+  const asp = stats.satisfaccion.aspectos;
+  hojaTabla(wb, "Por aspecto", "SIBER · Evaluación por aspecto", subtitulo,
+    [46, 12, 12],
+    ["Aspecto evaluado", "Promedio", "Respuestas"],
+    [
+      ["El contenido cumplió el objetivo", asp.contenidoObjetivo.promedio, asp.contenidoObjetivo.respuestas],
+      ["La metodología es adecuada", asp.metodologiaAdecuada.promedio, asp.metodologiaAdecuada.respuestas],
+      ["Aspectos académicos (global)", asp.academicos.promedio, asp.academicos.respuestas],
+      ["Dominio del tema", asp.dominioTema.promedio, asp.dominioTema.respuestas],
+      ["Coherencia en las exposiciones", asp.coherenciaExposicion.promedio, asp.coherenciaExposicion.respuestas],
+      ["Facilitador (global)", asp.facilitador.promedio, asp.facilitador.respuestas],
+      ["Satisfacción general", stats.satisfaccion.calificacionGeneral.promedio, stats.satisfaccion.calificacionGeneral.respuestas],
+    ],
+  );
+
+  const rol = stats.satisfaccion.porRol;
+  hojaTabla(wb, "Docente vs asistentes", "SIBER · Evaluación del docente vs. asistentes", subtitulo,
+    [32, 15, 12, 15, 12],
+    ["Aspecto evaluado", "Asistentes prom.", "Asistentes n", "Docente prom.", "Docente n"],
+    [
+      ["Contenido cumplió el objetivo", rol.asistentes.aspectos.contenidoObjetivo.promedio, rol.asistentes.aspectos.contenidoObjetivo.respuestas, rol.docentes.aspectos.contenidoObjetivo.promedio, rol.docentes.aspectos.contenidoObjetivo.respuestas],
+      ["Metodología adecuada", rol.asistentes.aspectos.metodologiaAdecuada.promedio, rol.asistentes.aspectos.metodologiaAdecuada.respuestas, rol.docentes.aspectos.metodologiaAdecuada.promedio, rol.docentes.aspectos.metodologiaAdecuada.respuestas],
+      ["Aspectos académicos", rol.asistentes.academicos.promedio, rol.asistentes.academicos.respuestas, rol.docentes.academicos.promedio, rol.docentes.academicos.respuestas],
+      ["Dominio del tema", rol.asistentes.aspectos.dominioTema.promedio, rol.asistentes.aspectos.dominioTema.respuestas, rol.docentes.aspectos.dominioTema.promedio, rol.docentes.aspectos.dominioTema.respuestas],
+      ["Coherencia en las exposiciones", rol.asistentes.aspectos.coherenciaExposicion.promedio, rol.asistentes.aspectos.coherenciaExposicion.respuestas, rol.docentes.aspectos.coherenciaExposicion.promedio, rol.docentes.aspectos.coherenciaExposicion.respuestas],
+      ["Facilitador", rol.asistentes.facilitador.promedio, rol.asistentes.facilitador.respuestas, rol.docentes.facilitador.promedio, rol.docentes.facilitador.respuestas],
+      ["Satisfacción general", rol.asistentes.general.promedio, rol.asistentes.general.respuestas, rol.docentes.general.promedio, rol.docentes.general.respuestas],
+    ],
   );
 
   const evolPorMes = new Map(stats.satisfaccion.evolucion.map(e => [e.mes, e]));
@@ -294,7 +332,10 @@ async function workbookAsistencia(reservaId: string): Promise<ExcelJS.Buffer> {
   ws.columns = [
     { key: "nombre", width: 30 }, { key: "documento", width: 16 },
     { key: "correo", width: 30 }, { key: "programa", width: 28 },
+    { key: "rol", width: 11 },
     { key: "tratamiento", width: 13 }, { key: "registro", width: 18 },
+    { key: "contenido", width: 11 }, { key: "metodologia", width: 12 },
+    { key: "dominio", width: 11 }, { key: "coherencia", width: 11 },
     { key: "calificacion", width: 12 }, { key: "fechaEval", width: 18 },
     { key: "observaciones", width: 55 },
   ];
@@ -325,8 +366,9 @@ async function workbookAsistencia(reservaId: string): Promise<ExcelJS.Buffer> {
 
   const filaCab = 4 + info.length + 1;
   ws.getRow(filaCab).values = [
-    "Nombre", "Documento", "Correo", "Programa", "Tratamiento datos",
-    "Fecha registro", "Calificación", "Fecha evaluación", "Observaciones",
+    "Nombre", "Documento", "Correo", "Programa", "Rol", "Tratamiento datos",
+    "Fecha registro", "Contenido", "Metodología", "Dominio tema", "Coherencia",
+    "Calif. general", "Fecha evaluación", "Observaciones",
   ];
   cabeceraTabla(ws, filaCab, nCols);
 
@@ -339,16 +381,24 @@ async function workbookAsistencia(reservaId: string): Promise<ExcelJS.Buffer> {
   for (const a of asistencias) {
     const row = ws.addRow({
       nombre: a.nombreCompleto, documento: a.documento, correo: a.correo,
-      programa: a.programa.nombre, tratamiento: a.aceptaTratamiento ? "Sí" : "No",
+      programa: a.programa.nombre, rol: a.esDocente ? "Docente" : "Asistente",
+      tratamiento: a.aceptaTratamiento ? "Sí" : "No",
       registro: aBogota(a.fechaRegistro).toFormat("dd/MM/yyyy HH:mm"),
+      contenido: a.evaluacion?.contenidoObjetivo ?? "",
+      metodologia: a.evaluacion?.metodologiaAdecuada ?? "",
+      dominio: a.evaluacion?.dominioTema ?? "",
+      coherencia: a.evaluacion?.coherenciaExposicion ?? "",
       calificacion: a.evaluacion?.calificacionGeneral ?? "",
       fechaEval: a.evaluacion ? aBogota(a.evaluacion.fechaRegistro).toFormat("dd/MM/yyyy HH:mm") : "",
       observaciones: a.evaluacion?.observaciones ?? "",
     });
     filaDatos(row, nCols, impar);
     impar = !impar;
+    row.getCell("rol").alignment = { vertical: "top", horizontal: "center" };
     row.getCell("tratamiento").alignment = { vertical: "top", horizontal: "center" };
-    row.getCell("calificacion").alignment = { vertical: "top", horizontal: "center" };
+    for (const k of ["contenido", "metodologia", "dominio", "coherencia", "calificacion"]) {
+      row.getCell(k).alignment = { vertical: "top", horizontal: "center" };
+    }
   }
   return wb.xlsx.writeBuffer();
 }

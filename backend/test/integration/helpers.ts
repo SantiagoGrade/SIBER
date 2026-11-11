@@ -16,15 +16,40 @@ asegurarEsquema();
 
 /** Limpia todas las tablas entre tests. */
 export async function resetDb() {
+  // Las transacciones interactivas de Prisma que expiran quedan en el pool
+  // como conexiones "idle in transaction": retienen locks (deadlock con el
+  // TRUNCATE) y, si el pool las reutiliza, los writes se meten en su tx
+  // abierta sin commitear (FK fantasma) o mueren al ser terminadas por otro
+  // ("Server has closed the connection"). Recrear el pool las descarta de
+  // forma segura; el pg_terminate solo alcanza zombies de OTROS procesos.
+  await prisma.$disconnect();
+  await prisma.$connect();
   await prisma.$executeRawUnsafe(`
-    TRUNCATE TABLE
-      "RegistroIntentoQr","EvaluacionFormacion","Asistencia","RegistroQrFormacion",
-      "TokenSeguro","PropuestaFecha","SolicitudReasignacion","HistorialReserva",
-      "Notificacion","Reserva","FormadorCurso","DisponibilidadSemanal",
-      "ExcepcionDisponibilidad","Curso","Formador","Facultad","ProgramaAcademico",
-      "ConfiguracionSistema","Cuenta"
-    RESTART IDENTITY CASCADE
+    SELECT pg_terminate_backend(pid)
+    FROM pg_stat_activity
+    WHERE datname = current_database()
+      AND pid <> pg_backend_pid()
+      AND state IN ('idle in transaction', 'idle in transaction (aborted)')
+      AND xact_start < now() - interval '10 seconds'
   `);
+  // Un TRUNCATE puede chocar con locks de backends ajenos; reintenta.
+  for (let intento = 0; ; intento++) {
+    try {
+      await prisma.$executeRawUnsafe(`
+        TRUNCATE TABLE
+          "RegistroIntentoQr","EvaluacionFormacion","Asistencia","RegistroQrFormacion",
+          "TokenSeguro","PropuestaFecha","SolicitudReasignacion","HistorialReserva",
+          "Notificacion","Reserva","FormadorCurso","DisponibilidadSemanal",
+          "ExcepcionDisponibilidad","Curso","Formador","Facultad","ProgramaAcademico",
+          "ConfiguracionSistema","Cuenta"
+        RESTART IDENTITY CASCADE
+      `);
+      return;
+    } catch (e) {
+      if (intento >= 4) throw e;
+      await new Promise(r => setTimeout(r, 200 * (intento + 1)));
+    }
+  }
 }
 
 export async function crearCuenta(params: {

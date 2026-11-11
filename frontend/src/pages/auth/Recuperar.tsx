@@ -33,7 +33,7 @@ export default function Recuperar() {
             </button>
           </>
         )}
-        <div className="text-center"><Link to="/login" className="text-sm text-primary hover:underline">Volver</Link></div>
+        <div className="text-center"><Link to="/login" className="text-sm text-primary dark:text-primary-soft hover:underline">Volver</Link></div>
       </form>
     </AuthLayout>
   );

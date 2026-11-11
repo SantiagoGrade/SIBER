@@ -61,6 +61,7 @@ export const misReservas = ah(async (req: Request, res: Response) => {
       formadorId: fid,
       ...(f.estado ? { estado: f.estado } : {}),
       ...(f.cursoId ? { cursoId: f.cursoId } : {}),
+      ...(f.codigo ? { codigo: { contains: f.codigo, mode: "insensitive" } } : {}),
       ...(f.desde || f.hasta ? { iniciaAt: { ...(f.desde ? { gte: f.desde } : {}), ...(f.hasta ? { lt: f.hasta } : {}) } } : {}),
     },
     include: { curso: true, _count: { select: { asistencias: true } } },

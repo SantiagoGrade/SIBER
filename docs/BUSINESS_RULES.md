@@ -3,6 +3,7 @@
 ## Reservas
 - Anticipación: **`anticipacion_minima_dias` días de calendario** (2 por defecto): el día completo cuenta — con 2 se reserva desde pasado mañana 00:00, zona `America/Bogota`.
 - Confirmación automática transaccional: valida curso activo → motor de asignación → reserva + historial + token cancelación + QR programado + outbox.
+- Datos del docente: `facultadId` y `programaAcademicoId` opcionales, ambos con búsqueda en el formulario — la facultad filtra los programas y elegir programa primero autoselecciona su facultad. El programa debe estar activo y pertenecer a la facultad elegida; si solo llega el programa, la facultad se deriva de él.
 - Estados: `CONFIRMADA → EN_CURSO → FINALIZADA`, o `CANCELADA` (solo desde `CONFIRMADA`). El job `estados-reserva` ejecuta ambas transiciones según `iniciaAt`/`terminaAt` (idempotente) y los listados de reservas la sincronizan de forma perezosa. `incidenciaPendiente` marca reasignación en curso sin cambiar el estado.
 
 ## Motor de asignación
@@ -27,7 +28,8 @@
 - Envío del correo **exactamente inicio + 30 min** (`qr_envio_minutos`), al formador **vigente** al momento del envío; el registro queda habilitado desde ese mismo envío. Cierre: **fin del curso + `asistencia_cierre_minutos`** (60 por defecto) — configurable en `ConfiguracionSistema`.
 - El job reintenta fallos SMTP con backoff (tope 60 min) hasta que la ventana de registro cierre — el QR se envía sí o sí mientras sirva; omite canceladas, marca `INCIDENCIA` si la ventana ya cerró, nunca duplica.
 - Formulario público: asistencia + encuesta en un solo flujo. Una asistencia y una evaluación por documento por formación (`@@unique(reservaId, documento)` y `asistenciaId @unique`).
-- Encuesta: calificación general obligatoria (1–5 entero) y observaciones opcionales. Programa académico: catálogo fijo institucional (campo con búsqueda/filtro).
+- Encuesta: cinco calificaciones obligatorias 1–5 — aspectos académicos (contenido cumplió el objetivo, metodología adecuada), facilitador (dominio del tema, coherencia en las exposiciones) y satisfacción general; el formulario las precarga en 5★ — y observaciones opcionales. Programa académico: catálogo fijo institucional (campo con búsqueda/filtro).
+- Si el correo del formulario coincide con `Reserva.docenteCorreo` (insensible a mayúsculas), la asistencia queda marcada `esDocente` y su evaluación se reporta aparte como la calificación del docente solicitante.
 
 ## Recordatorios del día anterior
 - A partir de las **12:00 Bogotá** (`recordatorio_envio_minutos`, 720 por defecto) el job `recordatorios` encola correos para las reservas `CONFIRMADA` que inician **mañana** (día calendario Bogotá).
@@ -36,3 +38,4 @@
 
 ## Estadísticas
 - Solo registros persistidos; excluyen canceladas y duplicados; promedios `null` sin respuestas; se muestra `respuestas` junto a cada promedio; tasa = evaluaciones ÷ asistencias.
+- `satisfaccion.aspectos`: promedios por pregunta y por grupo (`academicos`, `facilitador`); `satisfaccion.porRol`: mismo desglose —grupos y cada aspecto por separado— dividiendo `asistentes` de `docentes` (vía `Asistencia.esDocente`).

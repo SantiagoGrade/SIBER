@@ -1,13 +1,24 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #0A6A50;
   --color-primary-hover: #0A6A70;
   --color-accent: #ADE498;
+  /* Verde menta legible sobre fondos oscuros (textos/bordes de marca) */
+  --color-primary-soft: #6EE7A0;
+  /* Escala nocturna azul pizarra: fondos, superficies y bordes */
+  --color-night-950: #0F172A;
+  --color-night-900: #111827;
+  --color-night-850: #1A2331;
+  --color-night-800: #1F2937;
+  --color-night-700: #2A3648;
+  --color-night-600: #3D4E66;
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-gray-50 text-gray-900 antialiased dark:bg-night-950 dark:text-gray-200;
 }
 
 @layer components {
@@ -20,11 +31,15 @@ body {
            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
            hover:border-gray-400
            transition duration-150
-           disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400;
+           disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400
+           dark:bg-night-800 dark:text-gray-100 dark:border-night-600
+           dark:placeholder:text-gray-500
+           dark:hover:border-night-700 dark:focus:ring-primary-soft
+           dark:disabled:bg-night-900 dark:disabled:text-gray-500;
   }
 
   /* ── Labels ── */
-  .label-base { @apply block text-sm font-medium text-gray-700 mb-1; }
+  .label-base { @apply block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300; }
 
   /* ── Botones ── */
   .btn {
@@ -40,7 +55,8 @@ body {
            rounded-xl cursor-pointer
            transition duration-200
            disabled:opacity-60 disabled:cursor-not-allowed
-           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+           dark:focus:ring-primary-soft dark:focus:ring-offset-night-900;
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2
@@ -48,7 +64,8 @@ body {
            bg-primary/10 hover:bg-primary/20
            rounded-xl cursor-pointer
            transition duration-200
-           disabled:opacity-60 disabled:cursor-not-allowed;
+           disabled:opacity-60 disabled:cursor-not-allowed
+           dark:text-primary-soft dark:bg-primary/15 dark:hover:bg-primary/25;
   }
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2
@@ -61,28 +78,47 @@ body {
   }
 
   /* ── Card / contenedor ── */
-  .card { @apply bg-white rounded-2xl shadow-xl border border-gray-100 p-5; }
+  .card { @apply bg-white rounded-2xl shadow-xl border border-gray-100 p-5 dark:bg-night-900 dark:border-night-700; }
 
   /* ── Secciones de formulario ── */
-  .form-section { @apply border-t border-gray-100 pt-5 mt-5; }
-  .form-section-title { @apply text-xs font-semibold uppercase tracking-wide text-gray-500 mb-4; }
+  .form-section { @apply border-t border-gray-100 pt-5 mt-5 dark:border-night-700; }
+  .form-section-title { @apply text-xs font-semibold uppercase tracking-wide text-gray-500 mb-4 dark:text-gray-400; }
 
   /* ── Badges de estado ── */
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
-  .badge-verde { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700; }
-  .badge-amarillo { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700; }
-  .badge-rojo { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700; }
-  .badge-gris { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600; }
-  .badge-azul { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700; }
+  .badge-verde { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300; }
+  .badge-amarillo { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300; }
+  .badge-rojo { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300; }
+  .badge-gris { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-300; }
+  .badge-azul { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300; }
 
   /* ── Alertas ── */
-  .alert-success { @apply flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm; }
-  .alert-error { @apply flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm; }
+  .alert-success { @apply flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-200; }
+  .alert-error { @apply flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-200; }
 
   /* ── Tablas (cabecera primary con texto blanco) ── */
   .th { @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide bg-primary text-white; }
-  .td { @apply px-3 py-2 text-sm text-gray-700; }
+  .td { @apply px-3 py-2 text-sm text-gray-700 dark:text-gray-300; }
 }
+
+/* ── Scrollbars del sistema: delgadas, track transparente, hover con tinte de marca ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(10, 106, 80, 0.5); }
+.dark * { scrollbar-color: #3d4e66 transparent; }
+.dark *::-webkit-scrollbar-thumb { background: #3d4e66; }
+.dark *::-webkit-scrollbar-thumb:hover { background: rgba(110, 231, 160, 0.45); }
+
+/* Variante extra fina para contenedores internos pequeños */
+.scroll-fino::-webkit-scrollbar { width: 6px; height: 6px; }
 
 /* ── Calendario institucional (react-big-calendar) ── */
 .siber-calendar {
@@ -244,4 +280,78 @@ body {
   font-size: 0.8rem;
   color: #0A6A50;
   font-weight: 600;
+}
+
+/* ── Calendario en modo oscuro ── */
+.dark .siber-calendar .rbc-calendar {
+  color: #d1d5db;
+}
+.dark .siber-calendar .rbc-toolbar-label {
+  color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-toolbar button {
+  color: #d1d5db;
+  background: #1F2937;
+  border-color: #2A3648;
+}
+.dark .siber-calendar .rbc-toolbar button:hover {
+  background: rgba(110, 231, 160, 0.12);
+  color: #6EE7A0;
+  border-color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-toolbar button.rbc-active,
+.dark .siber-calendar .rbc-toolbar button.rbc-active:hover {
+  background: #0A6A50;
+  color: #fff;
+  border-color: #0A6A50;
+}
+.dark .siber-calendar .rbc-month-view,
+.dark .siber-calendar .rbc-time-view,
+.dark .siber-calendar .rbc-agenda-view {
+  border-color: #2A3648;
+}
+.dark .siber-calendar .rbc-header {
+  color: #9ca3af;
+  border-bottom-color: #2A3648;
+}
+.dark .siber-calendar .rbc-header + .rbc-header {
+  border-left-color: #1F2937;
+}
+.dark .siber-calendar .rbc-month-row + .rbc-month-row,
+.dark .siber-calendar .rbc-day-bg + .rbc-day-bg,
+.dark .siber-calendar .rbc-time-content,
+.dark .siber-calendar .rbc-time-content > * + * > *,
+.dark .siber-calendar .rbc-timeslot-group {
+  border-color: #1F2937;
+}
+.dark .siber-calendar .rbc-off-range-bg {
+  background: #0A101D;
+}
+.dark .siber-calendar .rbc-today {
+  background: rgba(110, 231, 160, 0.12);
+}
+.dark .siber-calendar .rbc-date-cell.rbc-now .rbc-button-link {
+  color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-month-view .rbc-event {
+  color: #d1d5db;
+}
+.dark .siber-calendar .cal-mes-hora {
+  color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-show-more {
+  color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-time-header.rbc-overflowing {
+  border-right-color: #1F2937;
+}
+.dark .siber-calendar .rbc-time-header-content {
+  border-left-color: #1F2937;
+}
+.dark .siber-calendar .rbc-current-time-indicator {
+  background-color: #6EE7A0;
+}
+.dark .siber-calendar .rbc-agenda-view .rbc-agenda-date-cell,
+.dark .siber-calendar .rbc-agenda-view .rbc-agenda-time-cell {
+  color: #6EE7A0;
 }

@@ -4,7 +4,7 @@
 SUPER_ADMIN, ADMIN, FORMADOR (login) · DOCENTE (público, sin login) · ESTUDIANTE (público, QR).
 
 ## Cobertura funcional
-- Gestión de cuentas, formadores (cursos habilitados, disponibilidad semanal multi-franja, excepciones), cursos (M:N). Facultades y programas académicos fijos en catálogo (por migración).
+- Gestión de cuentas, formadores (cursos habilitados, disponibilidad semanal multi-franja, excepciones), cursos (M:N). Facultades y programas académicos fijos en catálogo (por migración), cada programa vinculado a su facultad.
 - Solicitud pública del docente: catálogo dinámico, disponibilidad agregada (unión de formadores, sin exponer datos), horario flexible dentro de la franja, anticipación en días de calendario, confirmación automática.
 - Motor de asignación por menor % de ocupación semanal con desempates documentados; concurrencia real contra PostgreSQL.
 - Calendario del formador (día/semana/mes) con reservas, disponibilidad y bloqueos.

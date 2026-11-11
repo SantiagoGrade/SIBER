@@ -8,7 +8,7 @@ import { generarToken, hashToken, cifrarToken } from "../../src/utils/tokens";
 beforeAll(resetDb);
 beforeEach(resetDb);
 
-async function escenario(minutosDesdeInicio = -60) {
+async function escenario(minutosDesdeInicio = -60, docenteCorreo = "docente@test.local") {
   const suf = Math.random().toString(36).slice(2, 8);
   const curso = await crearCurso(`Curso-${suf}`);
   const f = await crearFormador({ usuario: `f-${suf}`, correo: `f-${suf}@t.co`, franjas: SEMANA_COMPLETA, cursoIds: [curso.id] });
@@ -16,19 +16,22 @@ async function escenario(minutosDesdeInicio = -60) {
   const inicio = DateTime.now().setZone(ZONA).plus({ minutes: minutosDesdeInicio });
   const reserva = await crearReservaDirecta({
     cursoId: curso.id, formadorId: f.formadorId, inicio, fin: inicio.plus({ hours: 4 }),
+    docenteCorreo,
   });
   const { token } = await crearQrPara(reserva.id, inicio);
   return { curso, f, programa, reserva, token, inicio };
 }
 
 const evalOk = {
+  contenidoObjetivo: 5, metodologiaAdecuada: 4,
+  dominioTema: 5, coherenciaExposicion: 4,
   calificacionGeneral: 5, observaciones: "Muy buena la dinámica",
 };
 
-function input(token: string, programaId: string, documento = "12345678") {
+function input(token: string, programaId: string, documento = "12345678", correo = "estudiante@t.co") {
   return {
     token, nombreCompleto: "Estudiante Uno", documento,
-    correo: "estudiante@t.co", programaAcademicoId: programaId,
+    correo, programaAcademicoId: programaId,
     evaluacion: { ...evalOk },
   };
 }
@@ -42,6 +45,10 @@ describe("Registro de asistencia + evaluación", () => {
     });
     expect(asistencia.reservaId).toBe(reserva.id);
     expect(asistencia.evaluacion!.calificacionGeneral).toBe(5);
+    expect(asistencia.evaluacion!.contenidoObjetivo).toBe(5);
+    expect(asistencia.evaluacion!.metodologiaAdecuada).toBe(4);
+    expect(asistencia.evaluacion!.dominioTema).toBe(5);
+    expect(asistencia.evaluacion!.coherenciaExposicion).toBe(4);
     expect(asistencia.evaluacion!.reservaId).toBe(reserva.id);
   });
 
@@ -63,14 +70,34 @@ describe("Registro de asistencia + evaluación", () => {
     expect(await prisma.asistencia.count()).toBe(2);
   });
 
-  it("calificaciones fuera del rango 1-5 son rechazadas", async () => {
+  it("calificaciones fuera del rango 1-5 son rechazadas en cualquier aspecto", async () => {
     const { token, programa } = await escenario();
-    for (const valor of [0, 6, -1, 2.5]) {
-      const inp = input(token, programa.id, "d" + valor);
-      (inp.evaluacion as { calificacionGeneral: number }).calificacionGeneral = valor;
-      await expect(registrarAsistenciaYEvaluacion(inp)).rejects.toMatchObject({ status: 400 });
+    const campos = ["calificacionGeneral", "contenidoObjetivo", "metodologiaAdecuada", "dominioTema", "coherenciaExposicion"] as const;
+    let n = 0;
+    for (const campo of campos) {
+      for (const valor of [0, 6, -1, 2.5]) {
+        const inp = input(token, programa.id, "d" + n++);
+        (inp.evaluacion as unknown as Record<string, number>)[campo] = valor;
+        await expect(registrarAsistenciaYEvaluacion(inp)).rejects.toMatchObject({ status: 400 });
+      }
     }
     expect(await prisma.asistencia.count()).toBe(0);
+  });
+
+  it("marca esDocente cuando el correo coincide con el del docente solicitante", async () => {
+    const { token, programa, reserva } = await escenario(-60, "Docente@Test.Local");
+    const rDoc = await registrarAsistenciaYEvaluacion(
+      input(token, programa.id, "111", "  DOCENTE@test.local  "),
+    );
+    const rAsis = await registrarAsistenciaYEvaluacion(
+      input(token, programa.id, "222", "otro@t.co"),
+    );
+    const docente = await prisma.asistencia.findUniqueOrThrow({ where: { id: rDoc.asistenciaId } });
+    const asistente = await prisma.asistencia.findUniqueOrThrow({ where: { id: rAsis.asistenciaId } });
+    expect(docente.esDocente).toBe(true);
+    expect(asistente.esDocente).toBe(false);
+    const lista = await asistentesDe(reserva.id);
+    expect(lista.find(a => a.documento === "111")!.esDocente).toBe(true);
   });
 
   it("token QR inválido es rechazado y el intento queda registrado", async () => {
@@ -106,6 +133,8 @@ describe("Registro de asistencia + evaluación", () => {
     expect(lista).toHaveLength(1);
     expect(lista[0].programa).toContain("Licenciatura");
     expect(lista[0].evaluacion!.calificacionGeneral).toBe(5);
+    expect(lista[0].evaluacion!.contenidoObjetivo).toBe(5);
+    expect(lista[0].evaluacion!.dominioTema).toBe(5);
     expect(lista[0].evaluacion!.observaciones).toBe("Muy buena la dinámica");
   });
 });

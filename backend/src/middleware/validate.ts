@@ -13,7 +13,7 @@ export function validar<T>(schema: ZodSchema<T>, fuente: "body" | "query" | "par
 /** Rate limiting general para endpoints públicos */
 export const limitadorPublico = rateLimit({
   windowMs: 60_000,
-  limit: 30,
+  limit: 120,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Demasiadas solicitudes, intenta más tarde", code: "RATE_LIMIT" },

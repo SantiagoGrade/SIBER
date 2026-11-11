@@ -9,6 +9,10 @@ export interface RegistroAsistenciaInput {
   correo: string;
   programaAcademicoId: string;
   evaluacion: {
+    contenidoObjetivo: number;
+    metodologiaAdecuada: number;
+    dominioTema: number;
+    coherenciaExposicion: number;
     calificacionGeneral: number;
     observaciones?: string;
   };
@@ -33,10 +37,15 @@ export async function registrarAsistenciaYEvaluacion(input: RegistroAsistenciaIn
   if (!programa || !programa.activo) throw badRequest("Programa académico inválido");
 
   const ev = input.evaluacion;
+  validarCalificacion(ev.contenidoObjetivo, "La calificación del contenido");
+  validarCalificacion(ev.metodologiaAdecuada, "La calificación de la metodología");
+  validarCalificacion(ev.dominioTema, "La calificación del dominio del tema");
+  validarCalificacion(ev.coherenciaExposicion, "La calificación de la coherencia");
   validarCalificacion(ev.calificacionGeneral, "La calificación general");
 
   const documento = input.documento.trim();
   if (!documento) throw badRequest("Documento requerido");
+  const correo = input.correo.trim().toLowerCase();
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -48,19 +57,30 @@ export async function registrarAsistenciaYEvaluacion(input: RegistroAsistenciaIn
         throw conflict("Ya existe un registro con este documento para esta formación");
       }
 
+      const reserva = await tx.reserva.findUniqueOrThrow({
+        where: { id: estado.reservaId },
+        select: { docenteCorreo: true },
+      });
+      const esDocente = correo === reserva.docenteCorreo.trim().toLowerCase();
+
       const asistencia = await tx.asistencia.create({
         data: {
           reservaId: estado.reservaId,
           nombreCompleto: input.nombreCompleto.trim(),
           documento,
-          correo: input.correo.trim().toLowerCase(),
+          correo,
           programaAcademicoId: input.programaAcademicoId,
+          esDocente,
         },
       });
       await tx.evaluacionFormacion.create({
         data: {
           reservaId: estado.reservaId,
           asistenciaId: asistencia.id,
+          contenidoObjetivo: ev.contenidoObjetivo,
+          metodologiaAdecuada: ev.metodologiaAdecuada,
+          dominioTema: ev.dominioTema,
+          coherenciaExposicion: ev.coherenciaExposicion,
           calificacionGeneral: ev.calificacionGeneral,
           observaciones: ev.observaciones?.trim() || null,
         },
@@ -88,9 +108,14 @@ export async function asistentesDe(reservaId: string) {
     documento: a.documento,
     correo: a.correo,
     programa: a.programa.nombre,
+    esDocente: a.esDocente,
     fechaRegistro: a.fechaRegistro,
     evaluacion: a.evaluacion
       ? {
+          contenidoObjetivo: a.evaluacion.contenidoObjetivo,
+          metodologiaAdecuada: a.evaluacion.metodologiaAdecuada,
+          dominioTema: a.evaluacion.dominioTema,
+          coherenciaExposicion: a.evaluacion.coherenciaExposicion,
           calificacionGeneral: a.evaluacion.calificacionGeneral,
           observaciones: a.evaluacion.observaciones,
         }

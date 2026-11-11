@@ -17,14 +17,14 @@ export default function Reasignaciones() {
       <ErrorMsg msg={error} />
       {!lista ? <Spinner /> : (
         <div className="card mt-3 space-y-2">
-          {lista.length === 0 && <p className="text-sm text-gray-500">No has solicitado reasignaciones. Puedes hacerlo desde “Mis formaciones”.</p>}
+          {lista.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No has solicitado reasignaciones. Puedes hacerlo desde “Mis formaciones”.</p>}
           {lista.map(s => (
-            <div key={s.id} className="border border-gray-200 rounded-xl p-3">
+            <div key={s.id} className="border border-gray-200 dark:border-night-700 rounded-xl p-3">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">{s.reserva.codigo} · {s.reserva.curso}</span>
                 <EstadoBadge estado={s.estado} />
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {fmtFechaHora(s.reserva.iniciaAt)} · {s.motivo} · solicitada {fmtFechaHora(s.createdAt)}
               </div>
             </div>

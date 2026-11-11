@@ -135,10 +135,11 @@ export const listarReservas = ah(async (req: Request, res: Response) => {
       ...(f.estado ? { estado: f.estado } : {}),
       ...(f.cursoId ? { cursoId: f.cursoId } : {}),
       ...(f.formadorId ? { formadorId: f.formadorId } : {}),
+      ...(f.codigo ? { codigo: { contains: f.codigo, mode: "insensitive" } } : {}),
       ...(f.desde || f.hasta ? { iniciaAt: { ...(f.desde ? { gte: f.desde } : {}), ...(f.hasta ? { lt: f.hasta } : {}) } } : {}),
     },
     include: {
-      curso: true, facultad: true,
+      curso: true, facultad: true, programa: true,
       formador: { include: { cuenta: { select: { nombreCompleto: true, correo: true } } } },
       _count: { select: { asistencias: true } },
     },
@@ -152,6 +153,7 @@ export const listarReservas = ah(async (req: Request, res: Response) => {
     docenteNombre: r.docenteNombre, docenteCorreo: r.docenteCorreo,
     docenteTelefono: r.docenteTelefono, aula: r.aula,
     facultad: r.facultad?.nombre ?? null,
+    programa: r.programa?.nombre ?? null,
     iniciaAt: r.iniciaAt, terminaAt: r.terminaAt, estado: r.estado,
     incidenciaPendiente: r.incidenciaPendiente,
     asistentes: r._count.asistencias,
@@ -163,7 +165,7 @@ export const detalleReserva = ah(async (req: Request, res: Response) => {
   const r = await prisma.reserva.findUnique({
     where: { id: req.params.id },
     include: {
-      curso: true, facultad: true,
+      curso: true, facultad: true, programa: true,
       formador: { include: { cuenta: true } },
       historial: { orderBy: { createdAt: "desc" } },
       qr: true,

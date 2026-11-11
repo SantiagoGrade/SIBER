@@ -23,22 +23,22 @@ export default function Disponibilidad() {
       {!data ? <Spinner /> : (
         <div className="grid md:grid-cols-2 gap-4 mt-3">
           <div className="card">
-            <h3 className="font-semibold text-primary mb-3">Horario semanal oficial</h3>
-            {data.semanal.length === 0 && <p className="text-sm text-gray-500">La Biblioteca aún no ha configurado tu disponibilidad.</p>}
+            <h3 className="font-semibold text-primary dark:text-primary-soft mb-3">Horario semanal oficial</h3>
+            {data.semanal.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">La Biblioteca aún no ha configurado tu disponibilidad.</p>}
             {data.semanal.map(f => (
-              <div key={f.id} className="flex justify-between border-b border-gray-100 py-2 text-sm">
+              <div key={f.id} className="flex justify-between border-b border-gray-100 dark:border-night-800 py-2 text-sm">
                 <span>{DIAS[f.diaSemana]}</span><span className="font-mono">{mm(f.horaInicio)}–{mm(f.horaFin)}</span>
               </div>
             ))}
-            <p className="text-xs text-gray-400 mt-3">Tu disponibilidad oficial la administra la Biblioteca. Para cambios, contacta al administrador.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Tu disponibilidad oficial la administra la Biblioteca. Para cambios, contacta al administrador.</p>
           </div>
           <div className="card">
-            <h3 className="font-semibold text-primary mb-3">Excepciones vigentes</h3>
-            {data.excepciones.length === 0 && <p className="text-sm text-gray-500">Sin excepciones próximas.</p>}
+            <h3 className="font-semibold text-primary dark:text-primary-soft mb-3">Excepciones vigentes</h3>
+            {data.excepciones.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">Sin excepciones próximas.</p>}
             {data.excepciones.map(e => (
-              <div key={e.id} className="border-b border-gray-100 py-2 text-sm">
+              <div key={e.id} className="border-b border-gray-100 dark:border-night-800 py-2 text-sm">
                 <span className="badge-amarillo">{e.tipo}</span>
-                <div className="text-xs text-gray-500 mt-1">{fmtFecha(e.iniciaAt)} → {fmtFecha(e.terminaAt)} {e.motivo && `· ${e.motivo}`}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{fmtFecha(e.iniciaAt)} → {fmtFecha(e.terminaAt)} {e.motivo && `· ${e.motivo}`}</div>
               </div>
             ))}
           </div>
